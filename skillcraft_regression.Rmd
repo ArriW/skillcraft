@@ -4,6 +4,11 @@ author: "Arrington Walters"
 date: "10/7/2020"
 output: html_document
 ---
+```{bash}
+git add --all
+git commit -m "First Upload from windows"
+git push
+```
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)

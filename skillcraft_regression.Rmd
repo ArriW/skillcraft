@@ -1,19 +1,17 @@
 ---
-title: "SkillCraft_Regression"
+title: "SkillCraft Multivariant Regression"
 author: "Arrington Walters"
 date: "10/7/2020"
 output: html_document
 ---
-```{bash commit,eval=FALSE  , include=FALSE}
+```{bash git,eval=FALSE  , include=FALSE}
 git add --all
-git commit -m "First Upload from windows"
+git commit -m ""
 git push
 ```
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
 ```{r loading_packages,include=FALSE}
 library(tidyverse)
 library(dbplyr) #piping
@@ -23,22 +21,22 @@ library(corrplot) # For corrlation matrix graphic
 library(ggthemes) #for ggplot Themes
 library(caret) #for easy machine learning workflow
 library(leaps) #for computing stepwise regression
+library(SC2API) #starcraft 2 API
 ```
-#
+```{r settoken, include=FALSE}
+set_token("33be678eb46d4f51ac36f72218abcdd2", "Sb3QWR8A9mN9s0XgAt5w4j0FttY84pkg")
+```
+```{r midterm2, include=FALSE}
+# Assignment Midterm 2
 
-# Assignment Midterm 1
-
-https://cgrudz.github.io/teaching/stat_757_2020_fall/assets/midterm_2.html
-
-# Dataset
-
- Introduction. Discuss the data set, your opening research question and why this question is meaningful.
+#https://cgrudz.github.io/teaching/stat_757_2020_fall/assets/midterm_2.html
+```
+# Introduction
  
 Videogames are one of my favorite past times, and the competitive scene's development has always intrigued me. One of the most notable games to establish a global competitive scene back by paid professionals was the real-time strategy game (RTS) Starcraft II (SC2). In 2003 the top 10 starcraft players by earnings made nearly four-million dollars combined from their winnings alone [https://liquipedia.net/starcraft2/Winnings/2013]. Watching top-caliber players reflexes and control astonishing even seasoned videogame enthusiasts. At the 2019 StarCraft II World Championship Finale, I and many others packed into the arena to see what these professions could do firsthand.
 
 ![https://blizzcon.com/en-us/news/23198508/congrats-to-the-starcraft-ii-wcs-global-finals-champion](./inline/WCS.png)
-
-  The eye watering speeds or more specifically in gaming terminology the action per minute (APMS) of these players was visibly remarkable. Professionals make actions at such fastspeeds it becomes challenging to follow their overall stategy. So past their sheer speed, I found it difficult to distinctly define what made these players professionals.
+The eye watering speeds or more specifically in gaming terminology the action per minute (APMS) of these players was visibly remarkable. Professionals make actions at such fastspeeds it becomes challenging to follow their overall stategy. So past their sheer speed, I found it difficult to distinctly define what made these players professionals.
 
 To learn more about what defines talent in SC2 this analysis we will explore in game metrics in attempts to predict the response League Rankrefered into in this analysis as LeagueIndex.
 
@@ -46,13 +44,11 @@ https://archive.ics.uci.edu/ml/datasets/SkillCraft1+Master+Table+Dataset
 
 ## Goal
 
-Select at least one variable to study as a response variable and construct a linear model to describe at least one relationship related to your research question. 
-
-To model the response LeagueIndex we will explore a player data from a 2013 ranked season of Starcraft. The predictors provided summarize ingame performace metrics for the season  per player (GameID). 
+To model the response LeagueIndex we will explore a sample of player data from a 2013 ranked season of Starcraft. The predictors provided summarize in game performance metrics for a season by player (GameID). 
 
 ## Limitations of the Model
 
-The multivariate regression model used for the midterm 2 portions of this study explores the linear estimation of mean response Y provided predictor(s) X.  The validity of this models approximations assumes Y has a gaussian distribution and can vary contiously but in this case main response ,LeagueIndex, is a ordinal variable. The levels of LeagueIndex range (1:8) corresponding to player ranks Bronze, Silver, Gold, Platinum, Diamond, Master, Grand Master, and Professional league. Game ranking systems frequently are based on ELO/MMR that varies over a much larger range typically ~1200-3000. These ranges are then masked with medal ranks as listed above and then further subdivided into divisions within each medal [Add Source]. Using either MMR or having the subdivisions of each player would provide some much needed contontinanity but unfortunately niether of these metrics are availible. These limitation will be revisited more speciffically along the exploration, modeling, and the predictions of the values.
+The multivariate regression model used for the midterm 2 portions of this study explores the linear estimation of mean response of LeagueIndex estimated by predictor $X$.  The validity of this models approximations assumes LeagueIndex is gaussian distributed and can vary continuously but in this case main response ,LeagueIndex, is a ordinal variable. The levels of LeagueIndex range (1:8) corresponding to player ranks Bronze, Silver, Gold, Platinum, Diamond, Master, Grand Master, and Professional league. Game ranking systems frequently are based on ELO/MMR that varies over a much larger range typically ~1200-3000. These ranges are then masked with medal ranks as listed above and then further subdivided into divisions within each medal [Add Source]. Using either MMR or having the subdivisions of each player would provide some much needed continuity but unfortunately neither of these metrics are available. These limitation will be revisited more specifically along the exploration, modeling, and the predictions of the values.
 
 A more suitable form of model for this regression would be based off a Polytonomous Logistic Regression for Ordinal Response (Propoertional Odds Model).
 
@@ -66,21 +62,36 @@ Describe your exploratory analysis, including relevant tables and figures.
 sc<-read_csv("~/STAT757/skillcraft/SkillCraft1_Dataset.csv")
 ```
 
-This dataset is a sample of Starcraft II players who particapte in ranked play. The variables are as follows:
+This dataset is a sample of Starcraft II players who participate in 2013 ranked play. The variables are as follows:
 ```{r,echo=FALSE}
 colnames(sc)
 ```
 
-The appedenix[Make hyperlink], covers each in depth but the following are highlighted because their used in the final analysis.
+The appendix[Make hyperlink], covers each in depth but the following are highlighted because their used in the final analysis.
 
 League Index
 
 
 ## Cleanliness
 
-The missing values are related to mostly exclsuive to players with LeagueIndex Professional Players (8). League Indexs 1-7 are obtainable natural game play, to be a professional you would have to be part of a team. I am aiming to understand how players go from being average to good, less so elite to best so the NA associated with professionals will be dropped.
+```{r}
+#set type
+sc$HoursPerWeek<-as.numeric(sc$HoursPerWeek)
+sc$TotalHours<-as.numeric(sc$TotalHours)
 
-The following will call the columns that are problematic for the analysis. Age and LeagueIndex both contain NA values while HoursPerWeek contains a 0 value.
+count_missing_age<-count(sc%>%
+  filter(is.na(Age))%>%arrange(LeagueIndex))
+count_professional<-count(sc%>%filter(LeagueIndex==8))
+count_grandmaster<-count(sc%>%filter(LeagueIndex==8))
+print(paste('There are ',count_missing_age,' missing values in the age column. There are ',count_professional,' professional #players.'))
+```
+
+
+The missing values are related to mostly exclusive to players with LeagueIndex equivalent to Professional Players (8). Where the `r count_professional` players with LeagueIndex=8 the age data is NA and the HoursPerWeek are 0. LeagueIndexes 1-7 are obtainable natural game play, to be a professional you would have to be part of a team. I am aiming to understand how players go from being average to good, less so elite to best so the NA associated with professionals will be dropped.
+
+[Question for Colin]: Furthermore while Bronze through Master leagues (LeagueIndex's 1-6) may contain any number of players, Grand Master (LeagueIndex=7) may only contain 200 players. To only analyze portions of the data that are "more normal" the `r count_grandmaster` players LeagueIndex==7 data will be dropped.
+
+The following will call the columns that are problematic for the analysis. 
 ```{r showingnullvalues`,echo=FALSE}
 sc_describe<-describe(sc)
 print('Age Values')
@@ -93,16 +104,7 @@ print('Hours Per Week Lower Extreme Values')
 sc_describe[["HoursPerWeek"]][["extremes"]][0]
 ```
 
-
-```{r, echo=FALSE}
-sc$HoursPerWeek<-as.numeric(sc$HoursPerWeek)
-sc$TotalHours<-as.numeric(sc$TotalHours)
-
-count_missing_age<-count(sc%>%
-  filter(is.na(Age))%>%arrange(LeagueIndex))
-count_professional<-count(sc%>%filter(LeagueIndex==8))
-print(paste('There are ',count_missing_age,' missing values in the age column. There are ',count_professional,' professional #players.'))
-  
+```{r finalclean, include=FALSE ,echo=FALSE}
 sc<-sc%>%
   drop_na()%>%
   filter(HoursPerWeek!=0)
@@ -110,11 +112,24 @@ sc_describe<-describe(sc)
 ```
 ## Summary Statistics
 
+Briefly describe PACS.
+```{r}
+summary(sc)
+```
+Correlation Plot
+```{r,echo=FALSE}
+sc_cor<-cor(select_if(sc,is.numeric),use = "complete.obs")
+sc_cor_plot<-corrplot(sc_cor,
+    tl.cex=.75,
+    tl.col='black')
+```
+
 ### Gaussanity of the Response
 
-When using Shapiro-Wilk W test test on response LeagueIndex we find that we can reject the idea that the response come from a normally distributed population. Besides the odvious issues with performing a W test with an ordinal variable, the levels seem to be mostly systemrically distributed about the psuedo mean Platinum only having a slightly long right tail.
+When using Shapiro-Wilk W test test on response LeagueIndex we find that we can reject the idea that the response come from a normally distributed population. 
 
-[https://www.jstor.org/stable/2347986?origin=crossref&seq=1].
+Besides the obvious issues with performing a W test with an ordinal response, the levels seem to be mostly symmetrically distributed about some pseduo mean League index `r round(mean(sc$LeagueIndex),2)`. This does not mean much considering we cannot assume levels between LeagueIndex are uniforming spaced. While the general distribution of ranking is difficult to come by, leagues like Grandmaster (LeagueIndex = 7 ) are capped at 200 which forcibly prevents uniformity across LeagueIndex 1-7.
+
 ```{r,echo=FALSE}
 LeagueIndex_Normal<-shapiro.test(sc$LeagueIndex)
 
@@ -137,6 +152,7 @@ ggplot(sc, aes(LeagueIndex)) +
 
 qqnorm(scale(sc$LeagueIndex))
 ```
+
 ### Gaussanity of the Predictors
 
 
@@ -156,15 +172,6 @@ qqnorm(scale(sc$HoursPerWeek))
 ```{r}
 qqnorm(scale(sc$APM))
 ```
-
-Correlation Plot
-```{r,echo=FALSE}
-sc_cor<-cor(select_if(sc,is.numeric),use = "complete.obs")
-sc_cor_plot<-corrplot(sc_cor,
-    tl.cex=.75,
-    tl.col='black')
-```
-
 
 # Model Specifications
 
@@ -191,7 +198,7 @@ shapiro.test(residuals(sc_lm_r1))
 ```
 
 
-# Manual Regression Iterractions
+# Manual Regression Interations
 ```{r}
 sc_lm<-lm(LeagueIndex~.-GameID,sc)
 sc_lm_1<-update(sc_lm,.~.-ComplexAbilitiesUsed)
@@ -203,9 +210,14 @@ sc_lm_6<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM
 sc_lm_7<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM-UniqueUnitsMade-ComplexUnitsMade-ActionsInPAC)
 sc_lm_8<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM-UniqueUnitsMade-ComplexUnitsMade-ActionsInPAC-TotalMapExplored)
 sc_lm_9<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM-UniqueUnitsMade-ComplexUnitsMade-ActionsInPAC-TotalMapExplored-Age)
-#summary(sc_lm_9,cor='T')
+#
 anova(sc_lm,sc_lm_1,sc_lm_2,sc_lm_3,sc_lm_4,sc_lm_5,sc_lm_6,sc_lm_7,sc_lm_8,sc_lm_9)
 ```
+
+```{r}
+summary(sc_lm_9,cor='T')
+```
+
 *5 Justify your choices using hypothesis testing and confidence intervals for selection of parameters. You should compare multiple model choices in describing this relationship, including the null model. *
 
 *6 Evaluate the goodness of fit of the model in terms of R2 and the standard errors, and the major sources of uncertainty. This includes parameter uncertainty, as well as structural uncertainty in the model. *
@@ -219,6 +231,27 @@ Describe your model, how you arrived at it, its goodness of fit, its significanc
 ## Prelude to final
 *7 Describe your proposed research question for the final. How will you revise your original research question? What issues have you encountered so far? What assumptions do you think you need to (re-)evaluate? *
 
+
+```{r, eval=FALSE,include=FALSE}
+data <-get_league_data(season_id = 43, 
+                        queue_id = 201, 
+                        team_type = 0, 
+                        league_id = 3, 
+                        host_region = "eu")
+ladder_id <- data$tier$division[[1]]$ladder_id
+
+for (i in ladder_id){
+counter<-0
+  if (counter==0){
+    headsc <- get_ladder_data(ladder_id = i, host_region = "eu")
+    counter<-counter+1}
+  else{
+    headsc<-rbind(headsc,get_ladder_data(ladder_id = i, host_region = "eu"))
+  }
+  }
+#ladder_data <- get_ladder_data(ladder_id = ladder_id, host_region = "eu")
+
+```
 ### About Columns
 
 Attribute Information:

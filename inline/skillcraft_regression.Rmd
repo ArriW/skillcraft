@@ -1,0 +1,253 @@
+---
+title: "SkillCraft_Regression"
+author: "Arrington Walters"
+date: "10/7/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r loading_packages,include=FALSE}
+library(tidyverse)
+library(dbplyr) #piping
+library(ggplot2) #plotting
+library(Hmisc) # for correlation matrix
+library(corrplot) # For corrlation matrix graphic
+library(ggthemes) #for ggplot Themes
+library(caret) #for easy machine learning workflow
+library(leaps) #for computing stepwise regression
+```
+
+```{r, include=FALSE}
+# Assignment Midterm 1
+
+#https://cgrudz.github.io/teaching/stat_757_2020_fall/assets/midterm_2.html
+```
+
+# Introduction
+ 
+Videogames are one of my favorite past times, and the competitive scene's development has always intrigued me. One of the most notable games to establish a global competitive scene back by paid professionals was the real-time strategy game (RTS) Starcraft II (SC2). In 2003 the top 10 starcraft players by earnings made nearly four-million dollars combined from their winnings alone [https://liquipedia.net/starcraft2/Winnings/2013]. Watching top-caliber players reflexes and control astonishing even seasoned videogame enthusiasts. At the 2019 StarCraft II World Championship Finale, I and many others packed into the arena to see what these professions could do firsthand.
+
+![https://blizzcon.com/en-us/news/23198508/congrats-to-the-starcraft-ii-wcs-global-finals-champion](WCS.png)
+
+  The eye watering speeds or more specifically in gaming terminology the action per minute (APMS) of these players was visibly remarkable. Professionals make actions at such fastspeeds it becomes challenging to follow their overall stategy. SI found it difficult to distinctly define what made these players professionals past their raw agility.
+
+To learn more about what defines talent in SC2 this analysis we will explore in game metrics in attempts to predict the response League Rank refered in in this analysis as LeagueIndex.
+
+The actual source of the data was cleaned and prepared by :
+https://archive.ics.uci.edu/ml/datasets/SkillCraft1+Master+Table+Dataset
+
+## Goal
+
+To model the response LeagueIndex we will explore data from a 2013 ranked season of SC2. The predictors provided summarize ingame performace metrics for the season  per player (GameID). 
+
+## Limitations of the Model
+
+The multivariate regression model used for the midterm 2 portions of this study explores the linear estimation of mean response Y provided predictor(s) X.  The validity of this models approximations assumes Y has a gaussian distribution and can vary contiously but in this case main response ,LeagueIndex, is a ordinal variable. The levels of LeagueIndex range (1:8) corresponding to player ranks Bronze, Silver, Gold, Platinum, Diamond, Master, Grand Master, and Professional league. Game ranking systems frequently are based on ELO/MMR that varies over a much larger range typically ~1200-3000. These ranges are then masked with medal ranks as listed above and then further subdivided into divisions within each medal [Add Source]. Using either MMR or having the subdivisions of each player would provide some much needed contontinanity but unfortunately niether of these metrics are availible. These limitation will be revisited more speciffically along the exploration, modeling, and the predictions of the values.
+
+A more suitable form of model for this regression would be based off a Polytonomous Logistic Regression for Ordinal Response (Propoertional Odds Model).
+
+Sources: Applied Linear Statistical Models
+Sources: https://stats.idre.ucla.edu/r/dae/ordinal-logistic-regression/
+
+# Data Exploring In Game Metrics
+
+```{r loaddata , include=FALSE}
+sc<-read_csv("~/STAT757/skillcraft/SkillCraft1_Dataset.csv")
+```
+
+This dataset is a sample of Starcraft II players who particapte in ranked play. The variables are as follows:
+```{r,echo=FALSE}
+colnames(sc)
+```
+
+The appedenix[Make hyperlink], covers each in depth but the following are highlighted because their used in the final analysis.
+
+League Index
+
+
+## Cleanliness
+
+The missing values are related to mostly exclsuive to players with LeagueIndex Professional Players (8). League Indexs 1-7 are obtainable natural game play, to be a professional you would have to be part of a team. I am aiming to understand how players go from being average to good, less so elite to best so the NA associated with professionals will be dropped.
+
+The following will call the columns that are problematic for the analysis. Age and LeagueIndex both contain NA values while HoursPerWeek contains a 0 value.
+```{r showingnullvalues`,echo=FALSE}
+sc_describe<-describe(sc)
+print('Age Values')
+sc_describe[["Age"]][["counts"]][2]
+
+print('LeagueIndex Values')
+sc_describe[["LeagueIndex"]][["counts"]][2]
+
+print('Hours Per Week Lower Extreme Values')
+sc_describe[["HoursPerWeek"]][["extremes"]][0]
+```
+
+
+```{r, echo=FALSE}
+sc$HoursPerWeek<-as.numeric(sc$HoursPerWeek)
+sc$TotalHours<-as.numeric(sc$TotalHours)
+
+count_missing_age<-count(sc%>%
+  filter(is.na(Age))%>%arrange(LeagueIndex))
+count_professional<-count(sc%>%filter(LeagueIndex==8))
+print(paste('There are ',count_missing_age,' missing values in the age column. There are ',count_professional,' professional #players.'))
+  
+sc<-sc%>%
+  drop_na()%>%
+  filter(HoursPerWeek!=0)
+sc_describe<-describe(sc)
+```
+## Summary Statistics
+
+### Gaussanity of the Response
+
+When using Shapiro-Wilk W test test on response LeagueIndex we find that we can reject the idea that the response come from a normally distributed population. Besides the odvious issues with performing a W test with an ordinal variable, the levels seem to be mostly systemrically distributed about the psuedo mean Platinum only having a slightly long right tail.
+
+[https://www.jstor.org/stable/2347986?origin=crossref&seq=1].
+```{r,echo=FALSE}
+LeagueIndex_Normal<-shapiro.test(sc$LeagueIndex)
+
+ggplot(sc, aes(LeagueIndex)) +
+  geom_histogram(bins=7)+
+  ggtitle(
+    'LeagueIndex Distribution',subtitle = paste(LeagueIndex_Normal[3],
+    " P-Value: ",LeagueIndex_Normal[2]))+
+  xlab("League Index (Bronze(1) to Grand Master(7)")+
+  ylab("Count")
+
+ggplot(sc, aes(LeagueIndex)) +
+  geom_density()+
+  ggtitle(
+    'LeagueIndex Distribution',subtitle = paste(LeagueIndex_Normal[3],
+    " P-Value: ",LeagueIndex_Normal[2]))+
+  xlab("League Index (Bronze(1) to Grand Master(7)")+
+  ylab("Count")
+#+theme_wsj(base_size = 7.5,color = "white")
+
+qqnorm(scale(sc$LeagueIndex))
+```
+### Gaussanity of the Predictors
+
+There is a strong depature from normality for the hous per week predictor
+```{r,echo=FALSE}
+HoursPerWeek_Normal<-shapiro.test(sc$LeagueIndex)
+
+ggplot(sc, aes(scale(log(HoursPerWeek)))) +
+  geom_density()+
+  ggtitle(
+    'Log:Hour per week distribution',subtitle = paste(HoursPerWeek_Normal[3],
+    " P-Value: ",HoursPerWeek_Normal[2]))+
+  xlab("Hours Per Week")+
+  ylab("Count")
+
+qqnorm(scale(sc$HoursPerWeek))
+qqline(scale(sc$HoursPerWeek))
+```
+```{r}
+qqnorm(scale(sc$APM))
+```
+
+Correlation Plot
+```{r,echo=FALSE}
+sc_cor<-cor(select_if(sc,is.numeric),use = "complete.obs")
+sc_cor_plot<-corrplot(sc_cor,
+    tl.cex=.75,
+    tl.col='black')
+```
+
+
+# Model Specifications
+
+### Stepwise
+
+Stepwise linear regression:
+http://www.sthda.com/english/articles/37-model-selection-essentials-in-r/154-stepwise-regression-essentials-in-r/
+
+The function summary() reports the best set of variables for each model size. From the output above, an asterisk specifies that a given variable is included in the corresponding model.
+http://www.sthda.com/english/articles/37-model-selection-essentials-in-r/155-best-subsets-regression-essentials-in-r/#computing-best-subsets-regression
+
+```{r exhaustive stepwise}
+sc_lm_sw_back <- regsubsets(LeagueIndex~., sc, nvmax = 5,
+                     method = "exhaust",force.in = NULL,force.out = NULL)
+
+sc_lm_sw_back_summary<-summary(sc_lm_sw_back)
+#using the lm provivded 
+sc_lm_r1<-lm(LeagueIndex~ActionLatency+AssignToHotkeys+APM+MinimapAttacks,sc)
+summary(sc_lm_r1,cor=T)
+
+#Normality
+qqnorm(residuals(sc_lm_r1))
+shapiro.test(residuals(sc_lm_r1))
+```
+
+
+# Manual Regression Iterations
+```{r,include=FALSE}
+sc_lm<-lm(LeagueIndex~.-GameID,sc)
+sc_lm_1<-update(sc_lm,.~.-ComplexAbilitiesUsed)
+sc_lm_2<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks)
+sc_lm_3<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours)
+sc_lm_4<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM)
+sc_lm_5<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM-UniqueUnitsMade)
+sc_lm_6<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM-UniqueUnitsMade-ComplexUnitsMade)
+sc_lm_7<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM-UniqueUnitsMade-ComplexUnitsMade-ActionsInPAC)
+sc_lm_8<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM-UniqueUnitsMade-ComplexUnitsMade-ActionsInPAC-TotalMapExplored)
+sc_lm_9<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM-UniqueUnitsMade-ComplexUnitsMade-ActionsInPAC-TotalMapExplored-Age)
+
+sc_lm_1_sum<-summary(sc_lm_1)
+sc_lm_9_sum<-summary(sc_lm_9)
+```
+
+The intial model starts is of the form $LeagueIndex=X\beta$,where n = {3337} and p = {18}. Predictors were trimmed by least signifance until all parameters were signficant at an $\alpha=5\%$. The resulting $X$ had p={9}.
+
+The ANOVA table below evaluates the _____ of the models. Risidual error? After removing 5 predictors the difference in the residuals was signficant. The  $adjustedR^2$ difference was mininamal starting at `r round(sc_lm_1_sum[["adj.r.squared"]],2) ` and ending at `r round(sc_lm_9_sum[["adj.r.squared"]],2) `.
+
+The W statistic `r shapiro.test(residuals(sc_lm_9))`
+
+```{r}
+anova(sc_lm,sc_lm_1,sc_lm_2,sc_lm_3,sc_lm_4,sc_lm_5,sc_lm_6,sc_lm_7,sc_lm_8,sc_lm_9)
+summary(sc_lm_9,cor='T')
+qqnorm(residuals(sc_lm_9))
+qqline(residuals(sc_lm_9))+title("hello")
+```
+
+*5 Justify your choices using hypothesis testing and confidence intervals for selection of parameters. You should compare multiple model choices in describing this relationship, including the null model. *
+
+*6 Evaluate the goodness of fit of the model in terms of R2 and the standard errors, and the major sources of uncertainty. This includes parameter uncertainty, as well as structural uncertainty in the model. *
+
+# Model Analysis Reform (Trim and then confound)
+
+Describe your model, how you arrived at it, its goodness of fit, its significance versus other choices of models, and its uncertainty. Describe the predictive power, and the uncertainty. Include relevant tables and figures.
+
+## Predict
+
+## Prelude to final
+*7 Describe your proposed research question for the final. How will you revise your original research question? What issues have you encountered so far? What assumptions do you think you need to (re-)evaluate? *
+
+### About Columns
+
+Attribute Information:
+
+1. GameID: Unique ID number for each game (integer)
+2. LeagueIndex: Bronze, Silver, Gold, Platinum, Diamond, Master, GrandMaster, and Professional leagues coded 1-8 (Ordinal)
+3. Age: Age of each player (integer)
+4. HoursPerWeek: Reported hours spent playing per week (integer)
+5. TotalHours: Reported total hours spent playing (integer)
+6. APM: Action per minute (continuous)
+7. SelectByHotkeys: Number of unit or building selections made using hotkeys per timestamp (continuous)
+8. AssignToHotkeys: Number of units or buildings assigned to hotkeys per timestamp (continuous)
+9. UniqueHotkeys: Number of unique hotkeys used per timestamp (continuous)
+10. MinimapAttacks: Number of attack actions on minimap per timestamp (continuous)
+11. MinimapRightClicks: number of right-clicks on minimap per timestamp (continuous)
+12. NumberOfPACs: Number of PACs per timestamp (continuous)
+13. GapBetweenPACs: Mean duration in milliseconds between PACs (continuous)
+14. ActionLatency: Mean latency from the onset of a PACs to their first action in milliseconds (continuous)
+15. ActionsInPAC: Mean number of actions within each PAC (continuous)
+16. TotalMapExplored: The number of 24x24 game coordinate grids viewed by the player per timestamp (continuous)
+17. WorkersMade: Number of SCVs, drones, and probes trained per timestamp (continuous)
+18. UniqueUnitsMade: Unique unites made per timestamp (continuous)
+19. ComplexUnitsMade: Number of ghosts, infestors, and high templars trained per timestamp (continuous)
+20. ComplexAbilitiesUsed: Abilities requiring specific targeting instructions used per timestamp (continuous)

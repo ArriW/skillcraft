@@ -4,7 +4,7 @@ author: "Arrington Walters"
 date: "10/7/2020"
 output: html_document
 ---
-```{bash}
+```{bash commit,eval=FALSE  , include=FALSE}
 git add --all
 git commit -m "First Upload from windows"
 git push
@@ -36,7 +36,7 @@ https://cgrudz.github.io/teaching/stat_757_2020_fall/assets/midterm_2.html
  
 Videogames are one of my favorite past times, and the competitive scene's development has always intrigued me. One of the most notable games to establish a global competitive scene back by paid professionals was the real-time strategy game (RTS) Starcraft II (SC2). In 2003 the top 10 starcraft players by earnings made nearly four-million dollars combined from their winnings alone [https://liquipedia.net/starcraft2/Winnings/2013]. Watching top-caliber players reflexes and control astonishing even seasoned videogame enthusiasts. At the 2019 StarCraft II World Championship Finale, I and many others packed into the arena to see what these professions could do firsthand.
 
-![https://blizzcon.com/en-us/news/23198508/congrats-to-the-starcraft-ii-wcs-global-finals-champion](./skillcraft/inline/WCS.png)
+![https://blizzcon.com/en-us/news/23198508/congrats-to-the-starcraft-ii-wcs-global-finals-champion](./inline/WCS.png)
 
   The eye watering speeds or more specifically in gaming terminology the action per minute (APMS) of these players was visibly remarkable. Professionals make actions at such fastspeeds it becomes challenging to follow their overall stategy. So past their sheer speed, I found it difficult to distinctly define what made these players professionals.
 

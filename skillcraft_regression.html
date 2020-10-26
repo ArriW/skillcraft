@@ -551,7 +551,7 @@ sc_lm_6&lt;-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-
 sc_lm_7&lt;-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM-UniqueUnitsMade-ComplexUnitsMade-ActionsInPAC)
 sc_lm_8&lt;-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM-UniqueUnitsMade-ComplexUnitsMade-ActionsInPAC-TotalMapExplored)
 sc_lm_9&lt;-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM-UniqueUnitsMade-ComplexUnitsMade-ActionsInPAC-TotalMapExplored-Age)
-#summary(sc_lm_9,cor=&#39;T&#39;)
+#
 anova(sc_lm,sc_lm_1,sc_lm_2,sc_lm_3,sc_lm_4,sc_lm_5,sc_lm_6,sc_lm_7,sc_lm_8,sc_lm_9)</code></pre>
 <pre><code>## Analysis of Variance Table
 ## 
@@ -605,6 +605,67 @@ anova(sc_lm,sc_lm_1,sc_lm_2,sc_lm_3,sc_lm_4,sc_lm_5,sc_lm_6,sc_lm_7,sc_lm_8,sc_l
 ## 10   3327 3245.3 -1   -4.9366 5.0863 0.02418 *
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>summary(sc_lm_9,cor=&#39;T&#39;)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = LeagueIndex ~ HoursPerWeek + SelectByHotkeys + AssignToHotkeys + 
+##     UniqueHotkeys + MinimapAttacks + NumberOfPACs + GapBetweenPACs + 
+##     ActionLatency + WorkersMade, data = sc)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -4.2841 -0.6475  0.0564  0.6843  2.7732 
+## 
+## Coefficients:
+##                   Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)      4.425e+00  2.080e-01  21.276  &lt; 2e-16 ***
+## HoursPerWeek     7.539e-03  1.475e-03   5.113 3.36e-07 ***
+## SelectByHotkeys  3.846e+01  4.216e+00   9.122  &lt; 2e-16 ***
+## AssignToHotkeys  8.384e+02  1.027e+02   8.163 4.60e-16 ***
+## UniqueHotkeys    2.960e-02  8.236e-03   3.594 0.000331 ***
+## MinimapAttacks   1.039e+03  1.115e+02   9.312  &lt; 2e-16 ***
+## NumberOfPACs     1.633e+02  3.198e+01   5.105 3.49e-07 ***
+## GapBetweenPACs  -1.150e-02  1.407e-03  -8.179 4.04e-16 ***
+## ActionLatency   -2.278e-02  1.905e-03 -11.959  &lt; 2e-16 ***
+## WorkersMade      2.525e+02  3.476e+01   7.265 4.64e-13 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 0.9877 on 3327 degrees of freedom
+## Multiple R-squared:  0.536,  Adjusted R-squared:  0.5348 
+## F-statistic: 427.1 on 9 and 3327 DF,  p-value: &lt; 2.2e-16
+## 
+## Correlation of Coefficients:
+##                 (Intercept) HoursPerWeek SelectByHotkeys AssignToHotkeys
+## HoursPerWeek    -0.11                                                   
+## SelectByHotkeys -0.05       -0.13                                       
+## AssignToHotkeys -0.10       -0.03        -0.28                          
+## UniqueHotkeys   -0.02        0.03        -0.08           -0.24          
+## MinimapAttacks  -0.05       -0.04        -0.02           -0.09          
+## NumberOfPACs    -0.84       -0.03        -0.01           -0.11          
+## GapBetweenPACs   0.09        0.00        -0.02            0.10          
+## ActionLatency   -0.85        0.04         0.11            0.04          
+## WorkersMade     -0.21        0.02        -0.03           -0.04          
+##                 UniqueHotkeys MinimapAttacks NumberOfPACs GapBetweenPACs
+## HoursPerWeek                                                            
+## SelectByHotkeys                                                         
+## AssignToHotkeys                                                         
+## UniqueHotkeys                                                           
+## MinimapAttacks  -0.07                                                   
+## NumberOfPACs    -0.15          0.02                                     
+## GapBetweenPACs   0.01          0.12          -0.17                      
+## ActionLatency   -0.04          0.00           0.71        -0.53         
+## WorkersMade      0.01         -0.02          -0.05         0.03         
+##                 ActionLatency
+## HoursPerWeek                 
+## SelectByHotkeys              
+## AssignToHotkeys              
+## UniqueHotkeys                
+## MinimapAttacks               
+## NumberOfPACs                 
+## GapBetweenPACs               
+## ActionLatency                
+## WorkersMade      0.09</code></pre>
 <p><em>5 Justify your choices using hypothesis testing and confidence intervals for selection of parameters. You should compare multiple model choices in describing this relationship, including the null model. </em></p>
 <p><em>6 Evaluate the goodness of fit of the model in terms of R2 and the standard errors, and the major sources of uncertainty. This includes parameter uncertainty, as well as structural uncertainty in the model. </em></p>
 </div>

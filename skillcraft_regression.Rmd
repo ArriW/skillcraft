@@ -6,7 +6,7 @@ output: html_document
 ---
 ```{bash git,eval=FALSE  , include=FALSE}
 git add --all
-git commit -m ""
+git commit -m "Updated everything"
 git push
 ```
 ```{r setup, include=FALSE}
@@ -48,7 +48,7 @@ To model the response LeagueIndex we will explore a sample of player data from a
 
 ## Limitations of the Model
 
-The multivariate regression model used for the midterm 2 portions of this study explores the linear estimation of mean response of LeagueIndex estimated by predictor $X$.  The validity of this models approximations assumes LeagueIndex is gaussian distributed and can vary continuously but in this case main response ,LeagueIndex, is a ordinal variable. The levels of LeagueIndex range (1:8) corresponding to player ranks Bronze, Silver, Gold, Platinum, Diamond, Master, Grand Master, and Professional league. Game ranking systems frequently are based on ELO/MMR that varies over a much larger range typically ~1200-3000. These ranges are then masked with medal ranks as listed above and then further subdivided into divisions within each medal [Add Source]. Using either MMR or having the subdivisions of each player would provide some much needed continuity but unfortunately neither of these metrics are available. These limitation will be revisited more specifically along the exploration, modeling, and the predictions of the values.
+The multivariate regression model used for the midterm 2 portions of this study explores the linear estimation of mean response of LeagueIndex estimated by predictor $X$.  The validity of this models approximations assumes LeagueIndex is gaussian distributed and can vary continuously but LeagueIndex is a ordinal variable. The levels of LeagueIndex range (1:8) corresponding to player ranks Bronze, Silver, Gold, Platinum, Diamond, Master, Grand Master, and Professional league. Game ranking systems frequently are based on ELO/MMR that varies over a much larger range typically ~1200-3000. These ranges are then masked with medal ranks as listed above and then further subdivided into divisions within each medal [Add Source]. Using either MMR or having the subdivisions of each player would provide some much needed continuity but unfortunately neither of these metrics are available. These limitation will be revisited more specifically along the exploration, modeling, and the predictions of the values.
 
 A more suitable form of model for this regression would be based off a Polytonomous Logistic Regression for Ordinal Response (Propoertional Odds Model).
 
@@ -216,6 +216,13 @@ anova(sc_lm,sc_lm_1,sc_lm_2,sc_lm_3,sc_lm_4,sc_lm_5,sc_lm_6,sc_lm_7,sc_lm_8,sc_l
 
 ```{r}
 summary(sc_lm_9,cor='T')
+```
+```{r}
+lm_APM<-lm(APM~LeagueIndex*(.-LeagueIndex-GameID),sc)
+summary(lm_APM)
+qqnorm(residuals(lm_APM))
+qqline(residuals(lm_APM))
+shapiro.test(residuals(lm_APM))
 ```
 
 *5 Justify your choices using hypothesis testing and confidence intervals for selection of parameters. You should compare multiple model choices in describing this relationship, including the null model. *

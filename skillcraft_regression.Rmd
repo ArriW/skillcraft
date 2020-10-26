@@ -44,7 +44,7 @@ https://archive.ics.uci.edu/ml/datasets/SkillCraft1+Master+Table+Dataset
 
 ## Goal
 
-To model the response LeagueIndex we will explore a sample of player data from a 2013 ranked season of Starcraft. The predictors provided summarize in game performance metrics for a season by player (GameID). 
+To model the response LeagueIndex we will explore a sample of player data from a 2013 ranked season of Starcraft. The predictors provided summarize in game performance metrics for a season by player (GameID). The modeling process will consider all the predictor variables and then trim down until only significant predictors remain.  Variables will be vetted for confoundment, and finally The model will be explored for to see if the BLUE assumptions hold.
 
 ## Limitations of the Model
 
@@ -57,7 +57,6 @@ Sources: https://stats.idre.ucla.edu/r/dae/ordinal-logistic-regression/
 
 # The Data Exploring
 
-Describe your exploratory analysis, including relevant tables and figures. 
 ```{r loaddata , include=FALSE}
 sc<-read_csv("~/STAT757/skillcraft/SkillCraft1_Dataset.csv")
 ```
@@ -69,8 +68,27 @@ colnames(sc)
 
 The appendix[Make hyperlink], covers each in depth but the following are highlighted because their used in the final analysis.
 
-League Index
+**LeagueIndex** is was covered thoroughy in the above section.
 
+**Perception Action Cycles (PACs)** are the circular flow of information between and organism and its environment in a sensor-guided sequence of behavior towards a goal[ISBN 978-1-4419-1452-1]. Each action the organism takes causes a change in the environment that is processed subsequently leads to action-information iterration in persuit of the goal.
+
+In this context this dataset PACs are aggregiate of screen movements where each PAC is a screen fixication of at least one action [https://archive.ics.uci.edu/ml/datasets/SkillCraft1+Master+Table+Dataset]. 
+
+The some of the time averaged metrics are per SC2 timestamps while other are per milisecond. To make these metrics more interperatable each metric will be converted into seconds. There are roughly 88.5 timestamps per second so each metrix in timestamps will be divided by _____. [https://archive.ics.uci.edu/ml/datasets/SkillCraft1+Master+Table+Dataset].
+
+```{r changeunits, include=FALSE}
+sc%>%
+  mutate(NumberOfPACs=NumberOfPACs*88.5,
+         MinimapAttacks=MinimapAttacks*88.5,
+         MinimapRightClicks=MinimapRightClicks*88.5,
+         SelectByHotkeys=SelectByHotkeys*88.5,
+         AssignToHotkeys=AssignToHotkeys*88.5,
+         UniqueHotkeys=UniqueHotkeys*88.5,
+         WorkersMade=WorkersMade*88.5,
+         UniqueUnitsMade=UniqueUnitsMade*88.5,
+         ComplexUnitsMade=ComplexUnitsMade*88.5,
+         ComplexAbilitiesUsed=ComplexAbilitiesUsed*88.5)
+```
 
 ## Cleanliness
 

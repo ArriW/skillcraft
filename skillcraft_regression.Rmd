@@ -72,24 +72,23 @@ The appendix[Make hyperlink], covers each in depth but the following are highlig
 
 ![ League Ranked Icons https://blizzcon.com/en-us/news/23198508/congrats-to-the-starcraft-ii-wcs-global-finals-champion](./inline/StarCraft-II-Leagues.png)
 
-**Perception Action Cycles (PACs)** are the circular flow of information between and organism and its environment in a sensor-guided sequence of behavior towards a goal[ISBN 978-1-4419-1452-1]. Each action the organism takes causes a change in the environment that is processed subsequently leads to action-information iterration in persuit of the goal.
+**Perception Action Cycles (PACs)** are the circular flow of information between an organism and its environment where a sensor-guided sequence of behaviors are iterative followed towards a goal[ISBN 978-1-4419-1452-1].In this dataset PACs are aggregate of screen movements where PAC is a screen fixation of containing at least one action [https://archive.ics.uci.edu/ml/datasets/SkillCraft1+Master+Table+Dataset].
 
-In this context this dataset PACs are aggregiate of screen movements where each PAC is a screen fixication of at least one action [https://archive.ics.uci.edu/ml/datasets/SkillCraft1+Master+Table+Dataset]. 
-
-The some of the time averaged metrics are per SC2 timestamps while other are per milisecond. To make these metrics more interperatable each metric will be converted into seconds. There are roughly 88.5 timestamps per second so each metrix in timestamps will be multiplied by 88.5 [https://archive.ics.uci.edu/ml/datasets/SkillCraft1+Master+Table+Dataset].
+### Converting Units
+Some of the time averaged metrics are per SC2 timestamp while other are per milisecond. To make these metrics more interpretable each metric will be converted into milliseconds. There are roughly 88.5 timestamps per second so each metrix in timestamps will be multiplied by 88.5 [https://archive.ics.uci.edu/ml/datasets/SkillCraft1+Master+Table+Dataset].
 
 ```{r changeunits, include=FALSE}
 sc%>%
-  mutate(NumberOfPACs=NumberOfPACs*88.5,
-         MinimapAttacks=MinimapAttacks*88.5,
-         MinimapRightClicks=MinimapRightClicks*88.5,
-         SelectByHotkeys=SelectByHotkeys*88.5,
-         AssignToHotkeys=AssignToHotkeys*88.5,
-         UniqueHotkeys=UniqueHotkeys*88.5,
-         WorkersMade=WorkersMade*88.5,
-         UniqueUnitsMade=UniqueUnitsMade*88.5,
-         ComplexUnitsMade=ComplexUnitsMade*88.5,
-         ComplexAbilitiesUsed=ComplexAbilitiesUsed*88.5)
+  mutate(NumberOfPACs=NumberOfPACs*88.5/1000,
+         MinimapAttacks=MinimapAttacks*88.5/1000,
+         MinimapRightClicks=MinimapRightClicks*88.5/1000,
+         SelectByHotkeys=SelectByHotkeys*88.5/1000,
+         AssignToHotkeys=AssignToHotkeys*88.5/1000,
+         UniqueHotkeys=UniqueHotkeys*88.5/1000,
+         WorkersMade=WorkersMade*88.5/1000,
+         UniqueUnitsMade=UniqueUnitsMade*88.5/1000,
+         ComplexUnitsMade=ComplexUnitsMade*88.5/1000,
+         ComplexAbilitiesUsed=ComplexAbilitiesUsed*88.5/1000)
 ```
 
 ## Cleanliness
@@ -135,6 +134,8 @@ sc_describe<-describe(sc)
 ```{r}
 summary(sc)
 ```
+
+
 Correlation Plot
 ```{r,echo=FALSE}
 sc_cor<-cor(select_if(sc,is.numeric),use = "complete.obs")

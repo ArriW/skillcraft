@@ -3,10 +3,12 @@ title: "SkillCraft Multivariant Regression"
 author: "Arrington Walters"
 date: "10/7/2020"
 output: html_document
+bibliography: ./inline/bibliography.bib
 ---
+
 ```{bash git,eval=FALSE  , include=FALSE}
 git add --all
-git commit -m "Small edits before draft submission."
+git commit -m "editting"
 git push
 ```
 ```{r setup, include=FALSE}
@@ -36,11 +38,9 @@ set_token("33be678eb46d4f51ac36f72218abcdd2", "Sb3QWR8A9mN9s0XgAt5w4j0FttY84pkg"
 Videogames are one of my favorite past times, and the competitive scene's development has always intrigued me. One of the most notable games to establish a global competitive scene back by paid professionals was the real-time strategy game (RTS) Starcraft II (SC2). In 2003 the top 10 starcraft players by earnings made nearly four-million dollars combined from their winnings alone [https://liquipedia.net/starcraft2/Winnings/2013]. Watching top-caliber players reflexes and control astonishing even seasoned videogame enthusiasts. At the 2019 StarCraft II World Championship Finale, I and many others packed into the arena to see what these professions could do firsthand.
 
 ![https://blizzcon.com/en-us/news/23198508/congrats-to-the-starcraft-ii-wcs-global-finals-champion](./inline/WCS.png)
-The eye watering speeds or more specifically in gaming terminology the action per minute (APMS) of these players was visibly remarkable. Professionals make actions at such fastspeeds it becomes challenging to follow their overall stategy. So past their sheer speed, I found it difficult to distinctly define what made these players professionals.
+The eye watering speeds is they perform at is typically referenced in gaming terminology as actions per minute (APMS). Professionals make actions at such fastspeeds  (high APMS) it becomes challenging to follow their overall stategy. So past pondering their sheer speed, I found it difficult to distinctly define what made these players professionals.
 
-To learn more about what defines talent in SC2 this analysis we will explore in game metrics in attempts to predict the response League Rankrefered into in this analysis as LeagueIndex.
-
-https://archive.ics.uci.edu/ml/datasets/SkillCraft1+Master+Table+Dataset
+To learn more about what defines talent in SC2 this analysis we will explore in game metrics in attempts to predict their rank in competitive mode. The dataset used was provided by ['@UCI'](https://archive.ics.uci.edu/ml/datasets/SkillCraft1+Master+Table+Dataset).
 
 ## Goal
 
@@ -66,13 +66,13 @@ This dataset is a sample of Starcraft II players who participate in 2013 ranked 
 colnames(sc)
 ```
 
-The appendix[Make hyperlink], covers each in depth but the following are highlighted because their used in the final analysis.
+The appendix covers each in depth but the following are highlighted because their used in the final analysis.
 
 **LeagueIndex** is was covered thoroughy in the above section.
 
 ![ League Ranked Icons https://blizzcon.com/en-us/news/23198508/congrats-to-the-starcraft-ii-wcs-global-finals-champion](./inline/StarCraft-II-Leagues.png)
 
-**Perception Action Cycles (PACs)** are the circular flow of information between an organism and its environment where a sensor-guided sequence of behaviors are iterative followed towards a goal[ISBN 978-1-4419-1452-1].In this dataset PACs are aggregate of screen movements where PAC is a screen fixation of containing at least one action [https://archive.ics.uci.edu/ml/datasets/SkillCraft1+Master+Table+Dataset].
+**Perception Action Cycles (PACs)** are the circular flow of information between an organism and its environment where a sensor-guided sequence of behaviors are iteratively followed towards a goal[ISBN 978-1-4419-1452-1].In this dataset PACs are aggregate of screen movements where PAC is a screen fixation of containing at least one action [https://archive.ics.uci.edu/ml/datasets/SkillCraft1+Master+Table+Dataset].
 
 ### Converting Units
 Some of the time averaged metrics are per SC2 timestamp while other are per milisecond. To make these metrics more interpretable each metric will be converted into milliseconds. There are roughly 88.5 timestamps per second so each metrix in timestamps will be multiplied by 88.5 [https://archive.ics.uci.edu/ml/datasets/SkillCraft1+Master+Table+Dataset].
@@ -105,8 +105,7 @@ count_grandmaster<-count(sc%>%filter(LeagueIndex==8))
 print(paste('There are ',count_missing_age,' missing values in the age column. There are ',count_professional,' professional #players.'))
 ```
 
-
-The missing values are related to mostly exclusive to players with LeagueIndex equivalent to Professional Players (8). Where the `r count_professional` players with LeagueIndex=8 the age data is NA and the HoursPerWeek are 0. LeagueIndexes 1-7 are obtainable natural game play, to be a professional you would have to be part of a team. I am aiming to understand how players go from being average to good, less so elite to best so the NA associated with professionals will be dropped.
+The missing values are related exclusive to players with LeagueIndex equivalent to Professional Players (8). Where the `r count_professional` players with LeagueIndex=8 the age data is NA and the HoursPerWeek are 0. LeagueIndexes 1-7 are obtainable natural game play, to be a professional you would have to be part of a team. I am aiming to understand how players go from being average to good, less so elite to best so the NA associated with professionals will be dropped.
 
 [Question for Colin]: Furthermore while Bronze through Master leagues (LeagueIndex's 1-6) may contain any number of players, Grand Master (LeagueIndex=7) may only contain 200 players. To only analyze portions of the data that are "more normal" the `r count_grandmaster` players LeagueIndex==7 data will be dropped.
 
@@ -287,6 +286,8 @@ counter<-0
 #ladder_data <- get_ladder_data(ladder_id = ladder_id, host_region = "eu")
 
 ```
+# References
+# Appendix
 ### About Columns
 
 Attribute Information:

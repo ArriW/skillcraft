@@ -6,7 +6,7 @@ output: html_document
 ---
 ```{bash git,eval=FALSE  , include=FALSE}
 git add --all
-git commit -m "Updated everything"
+git commit -m "Cleaned up whole document from mac"
 git push
 ```
 ```{r setup, include=FALSE}
@@ -70,11 +70,13 @@ The appendix[Make hyperlink], covers each in depth but the following are highlig
 
 **LeagueIndex** is was covered thoroughy in the above section.
 
+![ League Ranked Icons https://blizzcon.com/en-us/news/23198508/congrats-to-the-starcraft-ii-wcs-global-finals-champion](./inline/StarCraft-II-Leagues.png)
+
 **Perception Action Cycles (PACs)** are the circular flow of information between and organism and its environment in a sensor-guided sequence of behavior towards a goal[ISBN 978-1-4419-1452-1]. Each action the organism takes causes a change in the environment that is processed subsequently leads to action-information iterration in persuit of the goal.
 
 In this context this dataset PACs are aggregiate of screen movements where each PAC is a screen fixication of at least one action [https://archive.ics.uci.edu/ml/datasets/SkillCraft1+Master+Table+Dataset]. 
 
-The some of the time averaged metrics are per SC2 timestamps while other are per milisecond. To make these metrics more interperatable each metric will be converted into seconds. There are roughly 88.5 timestamps per second so each metrix in timestamps will be divided by _____. [https://archive.ics.uci.edu/ml/datasets/SkillCraft1+Master+Table+Dataset].
+The some of the time averaged metrics are per SC2 timestamps while other are per milisecond. To make these metrics more interperatable each metric will be converted into seconds. There are roughly 88.5 timestamps per second so each metrix in timestamps will be multiplied by 88.5 [https://archive.ics.uci.edu/ml/datasets/SkillCraft1+Master+Table+Dataset].
 
 ```{r changeunits, include=FALSE}
 sc%>%
@@ -130,7 +132,6 @@ sc_describe<-describe(sc)
 ```
 ## Summary Statistics
 
-Briefly describe PACS.
 ```{r}
 summary(sc)
 ```
@@ -201,8 +202,8 @@ http://www.sthda.com/english/articles/37-model-selection-essentials-in-r/154-ste
 The function summary() reports the best set of variables for each model size. From the output above, an asterisk specifies that a given variable is included in the corresponding model.
 http://www.sthda.com/english/articles/37-model-selection-essentials-in-r/155-best-subsets-regression-essentials-in-r/#computing-best-subsets-regression
 
-```{r exhaustive stepwise}
-sc_lm_sw_back <- regsubsets(LeagueIndex~., sc, nvmax = 5,
+```{r exhaustivestepwise}
+sc_lm_sw_back<-regsubsets(LeagueIndex~., sc, nvmax = 5,
                      method = "exhaust",force.in = NULL,force.out = NULL)
 
 sc_lm_sw_back_summary<-summary(sc_lm_sw_back)
@@ -215,9 +216,8 @@ qqnorm(residuals(sc_lm_r1))
 shapiro.test(residuals(sc_lm_r1))
 ```
 
-
 # Manual Regression Interations
-```{r}
+```{r,echo=FALSE}
 sc_lm<-lm(LeagueIndex~.-GameID,sc)
 sc_lm_1<-update(sc_lm,.~.-ComplexAbilitiesUsed)
 sc_lm_2<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks)
@@ -228,24 +228,33 @@ sc_lm_6<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM
 sc_lm_7<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM-UniqueUnitsMade-ComplexUnitsMade-ActionsInPAC)
 sc_lm_8<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM-UniqueUnitsMade-ComplexUnitsMade-ActionsInPAC-TotalMapExplored)
 sc_lm_9<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM-UniqueUnitsMade-ComplexUnitsMade-ActionsInPAC-TotalMapExplored-Age)
-#
+```
+
+
+*5 Justify your choices using hypothesis testing and confidence intervals for selection of parameters. You should compare multiple model choices in describing this relationship, including the null model. *
+
+*6 Evaluate the goodness of fit of the model in terms of R2 and the standard errors, and the major sources of uncertainty. This includes parameter uncertainty, as well as structural uncertainty in the model. *
+
+An all inclusive model was made with with every predictor. Predictors were then removed by descend t values until only significant predictors remained.
+
+Performing an ANOVA test we find that there is a significant difference in the models (see table below), but the $adjR^2$ is barely different. Starting at `r round(summary(sc_lm)[["adj.r.squared"]],2)` and ending at `r round(summary(sc_lm_9)[["adj.r.squared"]],2)`
+
+[Question for Colin]: What is my anova test telling me when i construct this? That there is a significant difference in the residuals?
+```{r,echo=FALSE}
 anova(sc_lm,sc_lm_1,sc_lm_2,sc_lm_3,sc_lm_4,sc_lm_5,sc_lm_6,sc_lm_7,sc_lm_8,sc_lm_9)
 ```
 
+Exploring the chosen model
 ```{r}
 summary(sc_lm_9,cor='T')
 ```
-```{r}
+```{r alternative model,include=FALSE}
 lm_APM<-lm(APM~LeagueIndex*(.-LeagueIndex-GameID),sc)
 summary(lm_APM)
 qqnorm(residuals(lm_APM))
 qqline(residuals(lm_APM))
 shapiro.test(residuals(lm_APM))
 ```
-
-*5 Justify your choices using hypothesis testing and confidence intervals for selection of parameters. You should compare multiple model choices in describing this relationship, including the null model. *
-
-*6 Evaluate the goodness of fit of the model in terms of R2 and the standard errors, and the major sources of uncertainty. This includes parameter uncertainty, as well as structural uncertainty in the model. *
 
 # Model Analysis Reform (Trim and then confound)
 

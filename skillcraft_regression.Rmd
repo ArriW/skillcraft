@@ -6,7 +6,7 @@ output: html_document
 ---
 ```{bash git,eval=FALSE  , include=FALSE}
 git add --all
-git commit -m "Cleaned up whole document from mac"
+git commit -m "Small edits before draft submission."
 git push
 ```
 ```{r setup, include=FALSE}

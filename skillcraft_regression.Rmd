@@ -8,7 +8,7 @@ bibliography: ./inline/bibliography.bib
 
 ```{bash git,eval=FALSE  , include=FALSE}
 git add --all
-git commit -m ""
+git commit -m "Hypthoesis Testing"
 git push
 ```
 ```{r setup, include=FALSE}
@@ -239,16 +239,19 @@ anova(sc_lm_1)$'Pr(>F)'
 
 *6 Evaluate the goodness of fit of the model in terms of R2 and the standard errors, and the major sources of uncertainty. This includes parameter uncertainty, as well as structural uncertainty in the model. *
 
+## Testing for Signifance of Modeling
+
 An all inclusive model was made with with every predictor. Predictors were then removed by descending t values until only significant predictors remained.
 
-Our intial $H_o$ is there is no systematic structure to the response LeagueIndex. Our alternative $H_a$ is there is some relation such that $LeagueIndex=X\beta+\epsilon$, where X all other variables with the exception of index GameID. Without much surpise using18 predictor variable results of a very small p-value of ~`r glance(sc_lm)$p.value `. Over the interration this does not change in a notable fashion across the 9 other models as the last model results in a `r glance(sc_lm_9)$p.value`
+Our intial $H_o$ is there is no systematic structure to the response LeagueIndex. Our alternative $H_a$ is there is some relation such that $LeagueIndex=X\beta+\epsilon$, where X all other variables with the exception of index GameID. Without much surpise using18 predictor variable results of a very small p-value of ~`r glance(sc_lm)$p.value `. Over the interration this does not change in a notable fashion across the 9 other models as the last model also results in a p-value`r glance(sc_lm_9)$p.value`. Thus all iterations of the model we can reject the null hypothesis. 
+
+## Testing for Signifance Between Models
 
 Performing an ANOVA test we find that there is a significant difference in the models (see table below), but the $adjR^2$ is barely different. Starting at `r round(summary(sc_lm)[["adj.r.squared"]],2)` and ending at `r round(summary(sc_lm_9)[["adj.r.squared"]],2)`.
 
 ```{r}
 confint(sc_lm_9)
 ```
-
 
 [Question for Colin]: What is my anova test telling me when i construct this? That there is a significant difference in the residuals?
 ```{r,echo=FALSE}

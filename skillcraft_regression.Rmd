@@ -8,7 +8,7 @@ bibliography: ./inline/bibliography.bib
 
 ```{bash git,eval=FALSE  , include=FALSE}
 git add --all
-git commit -m "some bib and chunk cleaning"
+git commit -m ""
 git push
 ```
 ```{r setup, include=FALSE}
@@ -23,6 +23,8 @@ library(corrplot) # For corrlation matrix graphic
 library(ggthemes) #for ggplot Themes
 library(caret) #for easy machine learning workflow
 library(leaps) #for computing stepwise regression
+library(broom) #grabbing p-value
+
 library(SC2API) #starcraft 2 API
 ```
 ```{r settoken, include=FALSE}
@@ -53,10 +55,7 @@ To model the response LeagueIndex we will explore a sample of player data from a
 
 The multivariate regression model used for the midterm 2 portions of this study explores the linear estimation of mean response of LeagueIndex estimated by predictor $X$.  The validity of this models approximations assumes LeagueIndex is gaussian distributed and can vary continuously but LeagueIndex is a ordinal variable. The levels of LeagueIndex range (1:8) corresponding to player ranks Bronze, Silver, Gold, Platinum, Diamond, Master, Grand Master, and Professional league. Game ranking systems frequently are based on ELO/MMR that varies over a much larger range typically ~1200-3000. These ranges are then masked with medal ranks as listed above and then further subdivided into divisions within each medal [Add Source]. Using either MMR or having the subdivisions of each player would provide some much needed continuity but unfortunately neither of these metrics are available. These limitation will be revisited more specifically along the exploration, modeling, and the predictions of the values.
 
-A more suitable form of model for this regression would be based off a Polytonomous Logistic Regression for Ordinal Response (Proportional Odds Model) @OrdinalLog.
-
-
-
+A more suitable form of model for this regression would be based off a Polytonomous Logistic Regression for Ordinal Response (Proportional Odds Model) @OrdinalLog .
 
 # The Data Exploring
 
@@ -65,7 +64,7 @@ sc<-read_csv("~/STAT757/skillcraft/SkillCraft1_Dataset.csv")
 ```
 
 This dataset is a sample of Starcraft II players who participate in 2013 ranked play. The variables are as follows:
-```{r echo = T, results = 'hide'}
+```{r}
 colnames(sc)
 ```
 
@@ -73,30 +72,30 @@ The appendix covers each in depth but the following are highlighted because thei
 
 **LeagueIndex** is was covered thoroughy in the above section.
 
-!['@SC2IIWCSGlobal'](./inline/StarCraft-II-Leagues.png)
+\center !['@SC2IIWCSGlobal'](./inline/StarCraft-II-Leagues.png) \center
 
-**Perception Action Cycles (PACs)** are the circular flow of information between an organism and its environment where a sensor-guided sequence of behaviors are iteratively followed towards a goal[ISBN 978-1-4419-1452-1].In this dataset PACs are aggregate of screen movements where PAC is a screen fixation of containing at least one action @UCI.
+**Perception Action Cycles (PACs)** are the circular flow of information between an organism and its environment where a sensor-guided sequence of behaviors are iteratively followed towards a goal @Perception.In this dataset PACs are aggregate of screen movements where PAC is a screen fixation of containing at least one action @UCI.
 
 ### Converting Units
-Some of the time averaged metrics are per SC2 timestamp while other are per milisecond. To make these metrics more interpretable each metric will be converted into milliseconds. There are roughly 88.5 timestamps per second so each metrix in timestamps will be multiplied by 88.5 @UCI.
+Some of the time averaged metrics are per SC2 timestamp while other are per milisecond. To make these metrics more interpretable each metric will be converted into milliseconds. There are roughly 88.5/1000 timestamps per second so each metric in timestamps will be multiplied that as a coefficient  @UCI.
 
 ```{r changeunits, include=FALSE}
-sc%>%
-  mutate(NumberOfPACs=NumberOfPACs*88.5/1000,
-         MinimapAttacks=MinimapAttacks*88.5/1000,
-         MinimapRightClicks=MinimapRightClicks*88.5/1000,
-         SelectByHotkeys=SelectByHotkeys*88.5/1000,
-         AssignToHotkeys=AssignToHotkeys*88.5/1000,
-         UniqueHotkeys=UniqueHotkeys*88.5/1000,
-         WorkersMade=WorkersMade*88.5/1000,
-         UniqueUnitsMade=UniqueUnitsMade*88.5/1000,
-         ComplexUnitsMade=ComplexUnitsMade*88.5/1000,
-         ComplexAbilitiesUsed=ComplexAbilitiesUsed*88.5/1000)
+#sc%>%
+#  mutate(NumberOfPACs=NumberOfPACs*88.5/1000,
+#         MinimapAttacks=MinimapAttacks*88.5/1000,
+#         MinimapRightClicks=MinimapRightClicks*88.5/#1000,
+#         SelectByHotkeys=SelectByHotkeys*88.5/1000,
+#         AssignToHotkeys=AssignToHotkeys*88.5/1000,
+#         UniqueHotkeys=UniqueHotkeys*88.5/1000,
+#         WorkersMade=WorkersMade*88.5/1000,
+#         UniqueUnitsMade=UniqueUnitsMade*88.5/1000,
+#         ComplexUnitsMade=ComplexUnitsMade*88.5/1000#,
+#         ComplexAbilitiesUsed=ComplexAbilitiesUsed*88.5/1000)
 ```
 
 ## Cleanliness
 
-```{r ,echo = T, results = 'hide'}
+```{r ,include=FALSE}
 #set type
 sc$HoursPerWeek<-as.numeric(sc$HoursPerWeek)
 sc$TotalHours<-as.numeric(sc$TotalHours)
@@ -113,7 +112,7 @@ The missing values are related exclusive to players with LeagueIndex equivalent 
 [Question for Colin]: Furthermore while Bronze through Master leagues (LeagueIndex's 1-6) may contain any number of players, Grand Master (LeagueIndex=7) may only contain 200 players. To only analyze portions of the data that are "more normal" the `r count_grandmaster` players LeagueIndex==7 data will be dropped.
 
 The following will call the columns that are problematic for the analysis. 
-```{r showingnullvalues,echo = T, results = 'hide'}
+```{r showingnullvalues,echo=FALSE}
 sc_describe<-describe(sc)
 print('Age Values')
 sc_describe[["Age"]][["counts"]][2]
@@ -133,24 +132,27 @@ sc_describe<-describe(sc)
 ```
 ## Summary Statistics
 
-```{r echo = T, results = 'hide'}
+```{r}
 summary(sc)
 ```
 
 
-Correlation Plot
-```{r echo = T, results = 'hide'}
+### Correlation Plot
+
+```{r echo=FALSE}
 sc_cor<-cor(select_if(sc,is.numeric),use = "complete.obs")
 sc_cor_plot<-corrplot(sc_cor,
     tl.cex=.75,
     tl.col='black')
 ```
 
-### Gaussanity of the Response
+### Gaussianity of the Response
 
 When using Shapiro-Wilk W test test on response LeagueIndex we find that we can reject the idea that the response come from a normally distributed population. 
 
-Besides the obvious issues with performing a W test with an ordinal response, the levels seem to be mostly symmetrically distributed about some pseduo mean League index `r round(mean(sc$LeagueIndex),2)`. This does not mean much considering we cannot assume levels between LeagueIndex are uniforming spaced. While the general distribution of ranking is difficult to come by, leagues like Grandmaster (LeagueIndex = 7 ) are capped at 200 which forcibly prevents uniformity across LeagueIndex 1-7.
+Besides the obvious issues with performing a W test with an ordinal response, the the response has a heavy tail with a mean of  `r round(mean(sc$LeagueIndex),2)`. Additionaly we cannot assume the levels between LeagueIndexes are uniforming spaced. 
+
+[Should I Include:] While the population distribution of ranking is difficult to come by, leagues like Grandmaster (LeagueIndex = 7 ) are capped at 200 which forcibly prevents LeagueIndex 1-7 from having a gaussian distribution.
 
 ```{r,echo=FALSE}
 LeagueIndex_Normal<-shapiro.test(sc$LeagueIndex)
@@ -177,7 +179,6 @@ qqnorm(scale(sc$LeagueIndex))
 
 ### Gaussanity of the Predictors
 
-
 ```{r,echo=FALSE}
 HoursPerWeek_Normal<-shapiro.test(sc$LeagueIndex)
 
@@ -201,11 +202,9 @@ qqnorm(scale(sc$APM))
 
 Stepwise linear regression:
 
-
 The function summary() reports the best set of variables for each model size. From the output above, an asterisk specifies that a given variable is included in the corresponding model @Stepwise.
 
-
-```{r exhaustivestepwise}
+```{r exhaustivestepwise,echo=FALSE}
 sc_lm_sw_back<-regsubsets(LeagueIndex~., sc, nvmax = 5,
                      method = "exhaust",force.in = NULL,force.out = NULL)
 
@@ -231,6 +230,8 @@ sc_lm_6<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM
 sc_lm_7<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM-UniqueUnitsMade-ComplexUnitsMade-ActionsInPAC)
 sc_lm_8<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM-UniqueUnitsMade-ComplexUnitsMade-ActionsInPAC-TotalMapExplored)
 sc_lm_9<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM-UniqueUnitsMade-ComplexUnitsMade-ActionsInPAC-TotalMapExplored-Age)
+
+anova(sc_lm_1)$'Pr(>F)'
 ```
 
 
@@ -238,9 +239,16 @@ sc_lm_9<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM
 
 *6 Evaluate the goodness of fit of the model in terms of R2 and the standard errors, and the major sources of uncertainty. This includes parameter uncertainty, as well as structural uncertainty in the model. *
 
-An all inclusive model was made with with every predictor. Predictors were then removed by descend t values until only significant predictors remained.
+An all inclusive model was made with with every predictor. Predictors were then removed by descending t values until only significant predictors remained.
 
-Performing an ANOVA test we find that there is a significant difference in the models (see table below), but the $adjR^2$ is barely different. Starting at `r round(summary(sc_lm)[["adj.r.squared"]],2)` and ending at `r round(summary(sc_lm_9)[["adj.r.squared"]],2)`
+Our intial $H_o$ is there is no systematic structure to the response LeagueIndex. Our alternative $H_a$ is there is some relation such that $LeagueIndex=X\beta+\epsilon$, where X all other variables with the exception of index GameID. Without much surpise using18 predictor variable results of a very small p-value of ~`r glance(sc_lm)$p.value `. Over the interration this does not change in a notable fashion across the 9 other models as the last model results in a `r glance(sc_lm_9)$p.value`
+
+Performing an ANOVA test we find that there is a significant difference in the models (see table below), but the $adjR^2$ is barely different. Starting at `r round(summary(sc_lm)[["adj.r.squared"]],2)` and ending at `r round(summary(sc_lm_9)[["adj.r.squared"]],2)`.
+
+```{r}
+confint(sc_lm_9)
+```
+
 
 [Question for Colin]: What is my anova test telling me when i construct this? That there is a significant difference in the residuals?
 ```{r,echo=FALSE}

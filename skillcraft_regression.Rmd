@@ -133,7 +133,7 @@ sc_describe<-describe(sc)
 ```
 ## Summary Statistics
 
-```{recho = T, results = 'hide'}
+```{r echo = T, results = 'hide'}
 summary(sc)
 ```
 

@@ -8,7 +8,7 @@ bibliography: ./inline/bibliography.bib
 
 ```{bash git,eval=FALSE  , include=FALSE}
 git add --all
-git commit -m "editting"
+git commit -m "some bib and chunk cleaning"
 git push
 ```
 ```{r setup, include=FALSE}
@@ -35,10 +35,13 @@ set_token("33be678eb46d4f51ac36f72218abcdd2", "Sb3QWR8A9mN9s0XgAt5w4j0FttY84pkg"
 ```
 # Introduction
  
-Videogames are one of my favorite past times, and the competitive scene's development has always intrigued me. One of the most notable games to establish a global competitive scene back by paid professionals was the real-time strategy game (RTS) Starcraft II (SC2). In 2003 the top 10 starcraft players by earnings made nearly four-million dollars combined from their winnings alone [https://liquipedia.net/starcraft2/Winnings/2013]. Watching top-caliber players reflexes and control astonishing even seasoned videogame enthusiasts. At the 2019 StarCraft II World Championship Finale, I and many others packed into the arena to see what these professions could do firsthand.
+Videogames are one of my favorite past times, and the competitive scene's development has always intrigued me. One of the most notable games to establish a global competitive scene back by paid professionals was the real-time strategy game (RTS) Starcraft II (SC2). In 2003 the top 10 starcraft players by earnings made nearly four-million dollars combined from their winnings alone @Winnings2019. Watching top-caliber players reflexes and control astonishing is even seasoned videogame enthusiasts. At the 2019 StarCraft II World Championship Finale, I and many others packed into the arena to see what these professions could do firsthand.
 
-![https://blizzcon.com/en-us/news/23198508/congrats-to-the-starcraft-ii-wcs-global-finals-champion](./inline/WCS.png)
-The eye watering speeds is they perform at is typically referenced in gaming terminology as actions per minute (APMS). Professionals make actions at such fastspeeds  (high APMS) it becomes challenging to follow their overall stategy. So past pondering their sheer speed, I found it difficult to distinctly define what made these players professionals.
+
+!['@SC2IIWCSGlobal'](./inline/WCS.png)
+
+
+The eye watering speeds they perform at is typically referenced in gaming terminology as actions per minute (APMS). Professionals make actions at such fastspeeds (high APMS) it becomes challenging to follow their overall strategy. So past pondering their sheer speed, I found it difficult to distinctly define what made these players professionals.
 
 To learn more about what defines talent in SC2 this analysis we will explore in game metrics in attempts to predict their rank in competitive mode. The dataset used was provided by ['@UCI'](https://archive.ics.uci.edu/ml/datasets/SkillCraft1+Master+Table+Dataset).
 
@@ -50,10 +53,10 @@ To model the response LeagueIndex we will explore a sample of player data from a
 
 The multivariate regression model used for the midterm 2 portions of this study explores the linear estimation of mean response of LeagueIndex estimated by predictor $X$.  The validity of this models approximations assumes LeagueIndex is gaussian distributed and can vary continuously but LeagueIndex is a ordinal variable. The levels of LeagueIndex range (1:8) corresponding to player ranks Bronze, Silver, Gold, Platinum, Diamond, Master, Grand Master, and Professional league. Game ranking systems frequently are based on ELO/MMR that varies over a much larger range typically ~1200-3000. These ranges are then masked with medal ranks as listed above and then further subdivided into divisions within each medal [Add Source]. Using either MMR or having the subdivisions of each player would provide some much needed continuity but unfortunately neither of these metrics are available. These limitation will be revisited more specifically along the exploration, modeling, and the predictions of the values.
 
-A more suitable form of model for this regression would be based off a Polytonomous Logistic Regression for Ordinal Response (Propoertional Odds Model).
+A more suitable form of model for this regression would be based off a Polytonomous Logistic Regression for Ordinal Response (Proportional Odds Model) @OrdinalLog.
 
-Sources: Applied Linear Statistical Models
-Sources: https://stats.idre.ucla.edu/r/dae/ordinal-logistic-regression/
+
+
 
 # The Data Exploring
 
@@ -62,7 +65,7 @@ sc<-read_csv("~/STAT757/skillcraft/SkillCraft1_Dataset.csv")
 ```
 
 This dataset is a sample of Starcraft II players who participate in 2013 ranked play. The variables are as follows:
-```{r,echo=FALSE}
+```{r echo = T, results = 'hide'}
 colnames(sc)
 ```
 
@@ -70,12 +73,12 @@ The appendix covers each in depth but the following are highlighted because thei
 
 **LeagueIndex** is was covered thoroughy in the above section.
 
-![ League Ranked Icons https://blizzcon.com/en-us/news/23198508/congrats-to-the-starcraft-ii-wcs-global-finals-champion](./inline/StarCraft-II-Leagues.png)
+!['@SC2IIWCSGlobal'](./inline/StarCraft-II-Leagues.png)
 
-**Perception Action Cycles (PACs)** are the circular flow of information between an organism and its environment where a sensor-guided sequence of behaviors are iteratively followed towards a goal[ISBN 978-1-4419-1452-1].In this dataset PACs are aggregate of screen movements where PAC is a screen fixation of containing at least one action [https://archive.ics.uci.edu/ml/datasets/SkillCraft1+Master+Table+Dataset].
+**Perception Action Cycles (PACs)** are the circular flow of information between an organism and its environment where a sensor-guided sequence of behaviors are iteratively followed towards a goal[ISBN 978-1-4419-1452-1].In this dataset PACs are aggregate of screen movements where PAC is a screen fixation of containing at least one action @UCI.
 
 ### Converting Units
-Some of the time averaged metrics are per SC2 timestamp while other are per milisecond. To make these metrics more interpretable each metric will be converted into milliseconds. There are roughly 88.5 timestamps per second so each metrix in timestamps will be multiplied by 88.5 [https://archive.ics.uci.edu/ml/datasets/SkillCraft1+Master+Table+Dataset].
+Some of the time averaged metrics are per SC2 timestamp while other are per milisecond. To make these metrics more interpretable each metric will be converted into milliseconds. There are roughly 88.5 timestamps per second so each metrix in timestamps will be multiplied by 88.5 @UCI.
 
 ```{r changeunits, include=FALSE}
 sc%>%
@@ -93,7 +96,7 @@ sc%>%
 
 ## Cleanliness
 
-```{r}
+```{r ,echo = T, results = 'hide'}
 #set type
 sc$HoursPerWeek<-as.numeric(sc$HoursPerWeek)
 sc$TotalHours<-as.numeric(sc$TotalHours)
@@ -110,7 +113,7 @@ The missing values are related exclusive to players with LeagueIndex equivalent 
 [Question for Colin]: Furthermore while Bronze through Master leagues (LeagueIndex's 1-6) may contain any number of players, Grand Master (LeagueIndex=7) may only contain 200 players. To only analyze portions of the data that are "more normal" the `r count_grandmaster` players LeagueIndex==7 data will be dropped.
 
 The following will call the columns that are problematic for the analysis. 
-```{r showingnullvalues`,echo=FALSE}
+```{r showingnullvalues,echo = T, results = 'hide'}
 sc_describe<-describe(sc)
 print('Age Values')
 sc_describe[["Age"]][["counts"]][2]
@@ -130,13 +133,13 @@ sc_describe<-describe(sc)
 ```
 ## Summary Statistics
 
-```{r}
+```{recho = T, results = 'hide'}
 summary(sc)
 ```
 
 
 Correlation Plot
-```{r,echo=FALSE}
+```{r echo = T, results = 'hide'}
 sc_cor<-cor(select_if(sc,is.numeric),use = "complete.obs")
 sc_cor_plot<-corrplot(sc_cor,
     tl.cex=.75,
@@ -197,10 +200,10 @@ qqnorm(scale(sc$APM))
 ### Stepwise
 
 Stepwise linear regression:
-http://www.sthda.com/english/articles/37-model-selection-essentials-in-r/154-stepwise-regression-essentials-in-r/
 
-The function summary() reports the best set of variables for each model size. From the output above, an asterisk specifies that a given variable is included in the corresponding model.
-http://www.sthda.com/english/articles/37-model-selection-essentials-in-r/155-best-subsets-regression-essentials-in-r/#computing-best-subsets-regression
+
+The function summary() reports the best set of variables for each model size. From the output above, an asterisk specifies that a given variable is included in the corresponding model @Stepwise.
+
 
 ```{r exhaustivestepwise}
 sc_lm_sw_back<-regsubsets(LeagueIndex~., sc, nvmax = 5,
@@ -286,7 +289,7 @@ counter<-0
 #ladder_data <- get_ladder_data(ladder_id = ladder_id, host_region = "eu")
 
 ```
-# References
+
 # Appendix
 ### About Columns
 
@@ -312,3 +315,5 @@ Attribute Information:
 18. UniqueUnitsMade: Unique unites made per timestamp (continuous)
 19. ComplexUnitsMade: Number of ghosts, infestors, and high templars trained per timestamp (continuous)
 20. ComplexAbilitiesUsed: Abilities requiring specific targeting instructions used per timestamp (continuous)
+
+# References

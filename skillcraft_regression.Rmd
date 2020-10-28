@@ -7,6 +7,7 @@ bibliography: ./inline/bibliography.bib
 ---
 
 ```{bash git,eval=FALSE  , include=FALSE}
+cd ~/STAT757/skillcraft
 git add --all
 git commit -m "add summary to residuals of sc_lm_9"
 git push

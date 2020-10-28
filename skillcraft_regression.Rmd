@@ -8,7 +8,7 @@ bibliography: ./inline/bibliography.bib
 
 ```{bash git,eval=FALSE  , include=FALSE}
 git add --all
-git commit -m "some bib and chunk cleaning"
+git commit -m "fixed r echo"
 git push
 ```
 ```{r setup, include=FALSE}
@@ -23,10 +23,10 @@ library(corrplot) # For corrlation matrix graphic
 library(ggthemes) #for ggplot Themes
 library(caret) #for easy machine learning workflow
 library(leaps) #for computing stepwise regression
-library(SC2API) #starcraft 2 API
+#library(SC2API) #starcraft 2 API
 ```
 ```{r settoken, include=FALSE}
-set_token("33be678eb46d4f51ac36f72218abcdd2", "Sb3QWR8A9mN9s0XgAt5w4j0FttY84pkg")
+#set_token("33be678eb46d4f51ac36f72218abcdd2", #"Sb3QWR8A9mN9s0XgAt5w4j0FttY84pkg")
 ```
 ```{r midterm2, include=FALSE}
 # Assignment Midterm 2
@@ -40,8 +40,7 @@ Videogames are one of my favorite past times, and the competitive scene's develo
 
 !['@SC2IIWCSGlobal'](./inline/WCS.png)
 
-
-The eye watering speeds they perform at is typically referenced in gaming terminology as actions per minute (APMS). Professionals make actions at such fastspeeds (high APMS) it becomes challenging to follow their overall strategy. So past pondering their sheer speed, I found it difficult to distinctly define what made these players professionals.
+The eye watering speeds they perform at is typically referenced in gaming terminology as actions per minute (APMS). Professionals take actions at such fastspeeds (high APMS) it becomes challenging to follow their overall strategy. So past pondering their sheer speed, I found it difficult to distinctly define what made these players professionals.
 
 To learn more about what defines talent in SC2 this analysis we will explore in game metrics in attempts to predict their rank in competitive mode. The dataset used was provided by ['@UCI'](https://archive.ics.uci.edu/ml/datasets/SkillCraft1+Master+Table+Dataset).
 
@@ -54,8 +53,6 @@ To model the response LeagueIndex we will explore a sample of player data from a
 The multivariate regression model used for the midterm 2 portions of this study explores the linear estimation of mean response of LeagueIndex estimated by predictor $X$.  The validity of this models approximations assumes LeagueIndex is gaussian distributed and can vary continuously but LeagueIndex is a ordinal variable. The levels of LeagueIndex range (1:8) corresponding to player ranks Bronze, Silver, Gold, Platinum, Diamond, Master, Grand Master, and Professional league. Game ranking systems frequently are based on ELO/MMR that varies over a much larger range typically ~1200-3000. These ranges are then masked with medal ranks as listed above and then further subdivided into divisions within each medal [Add Source]. Using either MMR or having the subdivisions of each player would provide some much needed continuity but unfortunately neither of these metrics are available. These limitation will be revisited more specifically along the exploration, modeling, and the predictions of the values.
 
 A more suitable form of model for this regression would be based off a Polytonomous Logistic Regression for Ordinal Response (Proportional Odds Model) @OrdinalLog.
-
-
 
 
 # The Data Exploring

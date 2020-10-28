@@ -9,7 +9,7 @@ bibliography: ./inline/bibliography.bib
 ```{bash git,eval=FALSE  , include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "git repair"
+git commit -m "Further refinining units"
 git push
 ```
 ```{r setup, include=FALSE}
@@ -77,19 +77,7 @@ The appendix covers each in depth but the following are highlighted because thei
 
 **Perception Action Cycles (PACs)** are the circular flow of information between an organism and its environment where a sensor-guided sequence of behaviors are iteratively followed towards a goal @Perception.In this dataset PACs are aggregate of screen movements where PAC is a screen fixation of containing at least one action @UCI.
 
-```{r changeunits, include=FALSE}
-#sc%>%
-#  mutate(NumberOfPACs=NumberOfPACs*88.5/1000,
-#         MinimapAttacks=MinimapAttacks*88.5/1000,
-#         MinimapRightClicks=MinimapRightClicks*88.5/#1000,
-#         SelectByHotkeys=SelectByHotkeys*88.5/1000,
-#         AssignToHotkeys=AssignToHotkeys*88.5/1000,
-#         UniqueHotkeys=UniqueHotkeys*88.5/1000,
-#         WorkersMade=WorkersMade*88.5/1000,
-#         UniqueUnitsMade=UniqueUnitsMade*88.5/1000,
-#         ComplexUnitsMade=ComplexUnitsMade*88.5/1000#,
-#         ComplexAbilitiesUsed=ComplexAbilitiesUsed*88.5/1000)
-```
+
 
 # Cleanliness
 
@@ -135,9 +123,31 @@ Some of the time averaged metrics are per SC2 timestamp while other are per mili
 Some of the time averaged metrics are per milisecond. These will be transformed into seconds so the time units are completely uniform.
 
 Both of these transformations are linear and will not affect our model's assumptions.
+```{r changeunits, include=FALSE}
+sc<-sc%>%
+  mutate(NumberOfPACs=NumberOfPACs*88.5,
+         MinimapAttacks=MinimapAttacks*88.5,
+         MinimapRightClicks=MinimapRightClicks*88.5,
+         SelectByHotkeys=SelectByHotkeys*88.5,
+         AssignToHotkeys=AssignToHotkeys*88.5,
+         UniqueHotkeys=UniqueHotkeys*88.5,
+         WorkersMade=WorkersMade*88.5,
+         UniqueUnitsMade=UniqueUnitsMade*88.5,
+         ComplexUnitsMade=ComplexUnitsMade*88.5,
+         ComplexAbilitiesUsed=ComplexAbilitiesUsed*88.5,
+         GapBetweenPACs=GapBetweenPACs*1000,
+         ActionLatency=ActionLatency*1000)
+```
 
 ```{r}
-mean(sc$WorkersMade)*88.5
+colnames(sc)
+```
+
+```{r statsatlevels}
+#sc$LeagueIndex <- as.factor(sc$LeagueIndex)
+#ggplot(sc, aes(x=LeagueIndex, y=ActionsInPAC)) + 
+#  geom_boxplot()
+#lm(LeagueIndex~APM,sc)
 ```
 
 ## Summary Statistics

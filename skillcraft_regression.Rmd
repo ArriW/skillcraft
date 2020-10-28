@@ -8,7 +8,7 @@ bibliography: ./inline/bibliography.bib
 
 ```{bash git,eval=FALSE  , include=FALSE}
 git add --all
-git commit -m "fixed r echo"
+git commit -m "add summary to residuals of sc_lm_9"
 git push
 ```
 ```{r setup, include=FALSE}
@@ -247,6 +247,7 @@ anova(sc_lm,sc_lm_1,sc_lm_2,sc_lm_3,sc_lm_4,sc_lm_5,sc_lm_6,sc_lm_7,sc_lm_8,sc_l
 Exploring the chosen model
 ```{r}
 summary(sc_lm_9,cor='T')
+plot(sc_lm_9)
 ```
 ```{r alternative model,include=FALSE}
 lm_APM<-lm(APM~LeagueIndex*(.-LeagueIndex-GameID),sc)

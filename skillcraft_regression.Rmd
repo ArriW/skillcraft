@@ -54,10 +54,9 @@ To model the response LeagueIndex we will explore a sample of player data from a
 
 ## Limitations of the Model
 
-The multivariate regression model used for the midterm 2 portions of this study explores the linear estimation of mean response of LeagueIndex estimated by predictor $X$.  The validity of this models approximations assumes LeagueIndex is gaussian distributed and can vary continuously but LeagueIndex is a ordinal variable. The levels of LeagueIndex range (1:8) corresponding to player ranks Bronze, Silver, Gold, Platinum, Diamond, Master, Grand Master, and Professional league. Game ranking systems frequently are based on ELO/MMR that varies over a much larger range typically ~1200-3000. These ranges are then masked with medal ranks as listed above and then further subdivided into divisions within each medal [Add Source]. Using either MMR or having the subdivisions of each player would provide some much needed continuity but unfortunately neither of these metrics are available. These limitation will be revisited more specifically along the exploration, modeling, and the predictions of the values.
+The multivariate regression model used for the midterm 2 portions of this study explores the linear estimation of mean response of LeagueIndex estimated by predictor $X$.  The validity of this models approximations assumes LeagueIndex is gaussian distributed and can vary continuously but LeagueIndex is a ordinal variable. The levels of LeagueIndex range (1:8) corresponding to player ranks Bronze, Silver, Gold, Platinum, Diamond, Master, Grand Master, and Professional league. Game ranking systems frequently are based on ELO/MMR that varies over a much larger range typically ~1200-3000. These ranges are then masked with medal ranks as listed above and then further subdivided into divisions within each medal @Leagues2019 . Using either MMR or having the subdivisions of each player would provide some much needed continuity but unfortunately neither of these metrics are available. These limitation will be revisited more specifically along the exploration, modeling, and the predictions of the values.
 
 A more suitable form of model for this regression would be based off a Polytonomous Logistic Regression for Ordinal Response (Proportional Odds Model) @OrdinalLog.
-
 
 # The Data Exploring
 
@@ -65,7 +64,7 @@ A more suitable form of model for this regression would be based off a Polytonom
 sc<-read_csv("~/STAT757/skillcraft/SkillCraft1_Dataset.csv")
 ```
 
-This dataset is a sample of Starcraft II players who participate in 2013 ranked play. The variables are as follows:
+This dataset is a sample of averaged in-game metrics of Starcraft II players who participate in 2013 ranked play. The variables are as follows:
 ```{r}
 colnames(sc)
 ```
@@ -77,9 +76,6 @@ The appendix covers each in depth but the following are highlighted because thei
 \center !['@SC2IIWCSGlobal'](./inline/StarCraft-II-Leagues.png) \center
 
 **Perception Action Cycles (PACs)** are the circular flow of information between an organism and its environment where a sensor-guided sequence of behaviors are iteratively followed towards a goal @Perception.In this dataset PACs are aggregate of screen movements where PAC is a screen fixation of containing at least one action @UCI.
-
-### Converting Units
-Some of the time averaged metrics are per SC2 timestamp while other are per milisecond. To make these metrics more interpretable each metric will be converted into milliseconds. There are roughly 88.5/1000 timestamps per second so each metric in timestamps will be multiplied that as a coefficient  @UCI.
 
 ```{r changeunits, include=FALSE}
 #sc%>%
@@ -95,7 +91,7 @@ Some of the time averaged metrics are per SC2 timestamp while other are per mili
 #         ComplexAbilitiesUsed=ComplexAbilitiesUsed*88.5/1000)
 ```
 
-## Cleanliness
+# Cleanliness
 
 ```{r ,include=FALSE}
 #set type
@@ -132,6 +128,18 @@ sc<-sc%>%
   filter(HoursPerWeek!=0)
 sc_describe<-describe(sc)
 ```
+
+## Converting Units
+Some of the time averaged metrics are per SC2 timestamp while other are per milisecond. To make these metrics more interpretable each metric will be converted into seconds. There are roughly 88.5 timestamps per second so each metric in timestamps will be multiplied that as a coefficient  @UCI.
+
+Some of the time averaged metrics are per milisecond. These will be transformed into seconds so the time units are completely uniform.
+
+Both of these transformations are linear and will not affect our model's assumptions.
+
+```{r}
+mean(sc$WorkersMade)*88.5
+```
+
 ## Summary Statistics
 
 ```{r}
@@ -200,9 +208,11 @@ qqnorm(scale(sc$APM))
 
 # Model Specifications
 
-### Stepwise
+## Model Assumptions
 
-Stepwise linear regression:
+
+
+## Stepwise Linear Regression:
 
 The function summary() reports the best set of variables for each model size. From the output above, an asterisk specifies that a given variable is included in the corresponding model @Stepwise.
 
@@ -220,7 +230,7 @@ qqnorm(residuals(sc_lm_r1))
 shapiro.test(residuals(sc_lm_r1))
 ```
 
-# Manual Regression Interations
+## Manual Regression Interations
 ```{r,echo=FALSE}
 sc_lm<-lm(LeagueIndex~.-GameID,sc)
 sc_lm_1<-update(sc_lm,.~.-ComplexAbilitiesUsed)
@@ -241,7 +251,7 @@ anova(sc_lm_1)$'Pr(>F)'
 
 *6 Evaluate the goodness of fit of the model in terms of R2 and the standard errors, and the major sources of uncertainty. This includes parameter uncertainty, as well as structural uncertainty in the model. *
 
-## Testing for Signifance of Modeling
+### Testing for Signifance of Modeling
 
 An all inclusive model was made with with every predictor. Predictors were then removed by descending t values until only significant predictors remained.
 
@@ -260,7 +270,7 @@ confint(sc_lm_9)
 anova(sc_lm,sc_lm_1,sc_lm_2,sc_lm_3,sc_lm_4,sc_lm_5,sc_lm_6,sc_lm_7,sc_lm_8,sc_lm_9)
 ```
 
-Exploring the chosen model
+### Exploring the chosen model
 ```{r}
 summary(sc_lm_9,cor='T')
 plot(sc_lm_9)
@@ -273,7 +283,7 @@ qqline(residuals(lm_APM))
 shapiro.test(residuals(lm_APM))
 ```
 
-# Model Analysis Reform (Trim and then confound)
+### Model Analysis Reform (Trim and then confound)
 
 Describe your model, how you arrived at it, its goodness of fit, its significance versus other choices of models, and its uncertainty. Describe the predictive power, and the uncertainty. Include relevant tables and figures.
 

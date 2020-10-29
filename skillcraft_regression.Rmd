@@ -9,7 +9,7 @@ bibliography: ./inline/bibliography.bib
 ```{bash git,eval=FALSE  , include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "Adjusted modeling after outliar was removed"
+git commit -m "Editting. Removing things that are overkill for midterm 2. Touching up the final"
 git push
 ```
 ```{r setup, include=FALSE}
@@ -21,12 +21,11 @@ library(dbplyr) #piping
 library(ggplot2) #plotting
 library(Hmisc) # for correlation matrix
 library(corrplot) # For correlation matrix graphic
-library(ggthemes) #for ggplot Themes
-library(caret) #for easy machine learning workflow
-library(leaps) #for computing stepwise regression
+#library(ggthemes) #for ggplot Themes
+
 #library(SC2API) #starcraft 2 API
-library(broom) #grabbing p-value
-library(GGally) # ggpairs
+#library(broom) #grabbing p-value
+#library(GGally)  ggpairs
 ```
 ```{r settoken, include=FALSE}
 #set_token("33be678eb46d4f51ac36f72218abcdd2", #"Sb3QWR8A9mN9s0XgAt5w4j0FttY84pkg")
@@ -38,8 +37,7 @@ library(GGally) # ggpairs
 ```
 # Introduction
  
-Videogames are one of my favorite past times, and the competitive scene's development has always intrigued me. One of the most notable games to establish a global competitive scene back by paid professionals was the real-time strategy game (RTS) Starcraft II (SC2). In 2003 the top 10 starcraft players by earnings made nearly four-million dollars combined from their winnings alone @Winnings2019. Watching top-caliber players reflexes and control astonishing is even seasoned videogame enthusiasts. At the 2019 StarCraft II World Championship Finale, I and many others packed into the arena to see what these professions could do firsthand.
-
+Videogames are one of my favorite past times. As a player who particapates in ranked play, I've always kept my eye on the forefront of global competitions. One of the most notable games to establish a global competitive scene backed by paid professionals was the real-time strategy game (RTS) Starcraft II (SC2). In 2013 the top 10 starcraft players by earnings made nearly four-million dollars combined from their winnings alone @Winnings2019. Watching top-caliber players reflexes and control astonishing is even seasoned videogame enthusiasts. At the 2019 StarCraft II World Championship Finale, I and many others packed into the arena to see what these professions could do firsthand.
 
 !['@SC2IIWCSGlobal'](./inline/WCS.png)
 
@@ -49,13 +47,13 @@ To learn more about what defines talent in SC2 this analysis we will explore in 
 
 ## Goal
 
-To model the response LeagueIndex we will explore a sample of player data from a 2013 ranked season of Starcraft. The predictors provided summarize in game performance metrics for a season by player (GameID). The modeling process will consider all the predictor variables and then trim down until only significant predictors remain.  Variables will be vetted for confoundment, and finally The model will be explored for to see if the BLUE assumptions hold.
+To model the response LeagueIndex we will explore a sample of player data from a 2013 ranked season of Starcraft. The predictors provided summarize in game performance metrics for a season by player (GameID). The modeling process will consider all the predictor variables and then trim down until only significant predictors remain.  Variables will be vetted for multicolinearity and finally The model will be explored for to see if the BLUE assumptions hold.
 
 ## Limitations of the Model
 
-The multivariate regression model used for the midterm 2 portions of this study explores the linear estimation of mean response of LeagueIndex estimated by predictor $X$.  The validity of this models approximations assumes LeagueIndex is gaussian distributed and can vary continuously but LeagueIndex is a ordinal variable. The levels of LeagueIndex range (1:8) corresponding to player ranks Bronze, Silver, Gold, Platinum, Diamond, Master, Grand Master, and Professional league. Game ranking systems frequently are based on ELO/MMR that varies over a much larger range typically ~1200-3000. These ranges are then masked with medal ranks as listed above and then further subdivided into divisions within each medal @Leagues2019 . Using either MMR or having the subdivisions of each player would provide some much needed continuity but unfortunately neither of these metrics are available. These limitation will be revisited more specifically along the exploration, modeling, and the predictions of the values.
+The multivariate regression model used for the midterm 2 portions of this study explores the linear estimation of mean response of LeagueIndex estimated by predictors in the design matrix $X$. The validity of this models approximations assumes LeagueIndex is gaussian distributed and can vary continuously but LeagueIndex is a ordinal variable. The levels of LeagueIndex range (1:8) corresponding to player ranks Bronze, Silver, Gold, Platinum, Diamond, Master, Grand Master, and Professional league. Game ranking systems frequently are based on ELO/MMR that varies over a much larger range typically ~1200-3000. These ranges are then masked with medal ranks as listed above and then further subdivided into divisions within each medal @Leagues2019 . Using either MMR or having the subdivisions of each player would provide some much needed continuity but unfortunately neither of these metrics are available. These limitation will be revisited more specifically along the exploration, modeling, and the predictions of the values.
 
-A more suitable form of model for this regression would be based off a Polytonomous Logistic Regression for Ordinal Response (Proportional Odds Model) @OrdinalLog.
+A more suitable form of model for this regression would be based off a Polytonomous Logistic Regression for Ordinal Response (Proportional Odds Model) @OrdinalLog. These methods will be revisted for the final portion of this analysis.
 
 # The Data Exploring
 
@@ -64,7 +62,7 @@ sc<-read_csv("~/STAT757/skillcraft/SkillCraft1_Dataset.csv")
 ```
 
 This dataset is a sample of averaged in-game metrics of Starcraft II players who participate in 2013 ranked play. The variables are as follows:
-```{r}
+```{r,echo=}
 colnames(sc)
 ```
 The appendix covers each in depth but the following are highlighted because their used in the final analysis.
@@ -73,7 +71,7 @@ The appendix covers each in depth but the following are highlighted because thei
 
 \center !['@SC2IIWCSGlobal'](./inline/StarCraft-II-Leagues.png) \center
 
-**Perception Action Cycles (PACs)** are the circular flow of information between an organism and its environment where a sensor-guided sequence of behaviors are iteratively followed towards a goal @Perception.In this dataset PACs are aggregate of screen movements where PAC is a screen fixation of containing at least one action @UCI.
+**Perception Action Cycles (PACs)** are the circular flow of information between an organism and its environment where a sensor-guided sequence of behaviors are iteratively followed towards a goal @Perception. In this dataset PACs are aggregate of screen movements where PAC is a screen fixation of containing at least one action @UCI.
 
 # Cleanliness
 
@@ -222,6 +220,7 @@ ggplot(sc, aes(scale(log(HoursPerWeek)))) +
 
 qqnorm(scale(sc$HoursPerWeek))
 ```
+
 ```{r}
 qqnorm(scale(sc$APM))
 ```
@@ -230,20 +229,23 @@ qqnorm(scale(sc$APM))
 
 ## Model Assumptions at Risk
 
-
+```{r exhaustivestepwise,echo=FALSE,collapse=TRUE}
 
 ## Stepwise Linear Regression:
 
-The function summary() reports the best set of variables for each model size. From the output above, an asterisk specifies that a given variable is included in the corresponding model @Stepwise.
+#The function summary() reports the best set of variables for each model size. From the output above, an asterisk #specifies that a given variable is included in the corresponding model @Stepwise.
 
-```{r exhaustivestepwise,echo=FALSE,collapse=TRUE}
-sc_lm_sw_back<-regsubsets(LeagueIndex~., sc, nvmax = 5,
-                     method = "exhaust",force.in = NULL,force.out = NULL)
 
-sc_lm_sw_back_summary<-summary(sc_lm_sw_back)
+#library(caret) #for easy machine learning workflow
+#library(leaps) #for computing stepwise regression
+
+#sc_lm_sw_back<-regsubsets(LeagueIndex~., sc, nvmax = 5,
+#                     method = "exhaust",force.in = NULL,force.out = NULL)
+
+#sc_lm_sw_back_summary<-summary(sc_lm_sw_back)
 #using the lm provivded 
-sc_lm_r1<-lm(LeagueIndex~ActionLatency+AssignToHotkeys+APM+MinimapAttacks,sc)
-summary(sc_lm_r1,cor=T)
+#sc_lm_r1<-lm(LeagueIndex~ActionLatency+AssignToHotkeys+APM+MinimapAttacks,sc)
+#summary(sc_lm_r1,cor=T)
 
 #Normality
 #qqnorm(residuals(sc_lm_r1))
@@ -330,8 +332,12 @@ Evaluate the predictive power of the model – particularly, how effective does 
 
 *7 Describe your proposed research question for the final. How will you revise your original research question? What issues have you encountered so far? What assumptions do you think you need to (re-)evaluate? *
 
+For the final, the logistical regression will remodel the same problem with a different set of techniques and assumptions that fit the ordinal response.
 
-```{r, eval=FALSE,include=FALSE}
+The goal is for the analysis pull in additional regression techniques while still integrating the previous exploratory exercises.
+
+
+```{r, eval=FALSE,include=FALSE,include = FALSE}
 data <-get_league_data(season_id = 43, 
                         queue_id = 201, 
                         team_type = 0, 
@@ -353,8 +359,8 @@ counter<-0
 ```
 
 # Appendix
-### About Columns
 
+### About Columns
 Attribute Information:
 
 1. GameID: Unique ID number for each game (integer)

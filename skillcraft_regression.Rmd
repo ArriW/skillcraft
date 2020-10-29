@@ -9,7 +9,7 @@ bibliography: ./inline/bibliography.bib
 ```{bash git,eval=FALSE  , include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "Editting. Removing things that are overkill for midterm 2. Touching up the final"
+git commit -m "Editting. Removing overkill for midterm 2. Touching up the prelude to final. Pre-model confounding."
 git push
 ```
 ```{r setup, include=FALSE}
@@ -24,7 +24,7 @@ library(corrplot) # For correlation matrix graphic
 #library(ggthemes) #for ggplot Themes
 
 #library(SC2API) #starcraft 2 API
-#library(broom) #grabbing p-value
+library(broom) #grabbing p-value
 #library(GGally)  ggpairs
 ```
 ```{r settoken, include=FALSE}
@@ -62,7 +62,7 @@ sc<-read_csv("~/STAT757/skillcraft/SkillCraft1_Dataset.csv")
 ```
 
 This dataset is a sample of averaged in-game metrics of Starcraft II players who participate in 2013 ranked play. The variables are as follows:
-```{r,echo=}
+```{r,echo=FALSE}
 colnames(sc)
 ```
 The appendix covers each in depth but the following are highlighted because their used in the final analysis.
@@ -103,7 +103,7 @@ sc_describe[["LeagueIndex"]][["counts"]][2]
 print('Hours Per Week Lower Extreme Values')
 sc_describe[["HoursPerWeek"]][["extremes"]][0]
 ```
-In addition to the missing values we have a clear error with the total hours of one player. $GameID = 5140$ has 1,000,000 total hours that equates to 114 years of game time. If we assumed one extra 0 was added the player would still have 14 years of played time on a game that is only 10 years old as of a 2020. Removing two 0s equates to 1.4 years of played time which is much more realistic. Removing 3 zeros seems just as realistic. There is not a clear path to extrapolate this player's true total hours so their data will be dropped from the analysis. This was originally detected during model, but brought earlier into that analysis because how obiviously unintentional this value is.
+In addition to the missing values we have a clear error with the total hours of one player. $GameID = 5140$ has 1,000,000 total hours that equates to 114 years of game time. If we assumed one extra 0 was added the player would still have 14 years of played time on a game that is only 10 years old as of a 2020. Removing two 0s equates to 1.4 years of played time which is much more realistic. Removing 3 zeros results in `r .14*365` days of played time and that seems just as realistic. There is not a clear path to extrapolate this player's true total hours so their data will be dropped from the analysis. This was originally detected during modeling, but brought earlier into that analysis because how obiviously unintentional this value is.
 
 ```{r,echo=FALSE}
 describe(sc$TotalHours)
@@ -160,18 +160,22 @@ summary(sc)
 
 Visually we can see that LeagueIndex has a relatively strong correlation with APM, SelectByHotkeys, AssignToHotkeys, NumberofPACs, GapBetweenPACs, and Action Latency. Some of these predictors may be the best choices for model, although its worth noting at this point many of the predictor values also have fairly strong correlations within themselves which may cause multiplecolinearity in a model. This is not too surprising because many of these metrics capture rate of actions in slightly difference forms. For example APM and NumberOfPacs likely have a strict mathematical relationship where approximately $NumberOfPACs=APM*MatchDurationMinutes$. The slight differences between these metrixs them could have some deep explanatory power but that level of explore ration is beyond the scope of this analysis.
 
-[Remove some redundant items here]
-Before trimming an all the large modelthe following columns will be removed.
-- Remove Action Latency
-- Remove GapBetweenPACs - this is redundant but more importantly 
+The following columns will be dropped because plausible confoundance with APMs:
+- Remove Action Latency 
+- Remove GapBetweenPACs ^[Another issue with this is that its unist do not seem to align with the discription. Before and after the unit transformation GapBetween PACs results in periods that dont make since for the expected duration of SC2 matches.)]
 - Remove Number of PACS
-- Remove SelectbyHotkeys
+- Remove SelectbyHotke
+
+Focusing exclusively on APMs fit into an Occam's razor appoarch by reducing the.
 
 ```{r echo=FALSE}
 sc_cor<-cor(select_if(sc,is.numeric),use = "complete.obs")
 sc_cor_plot<-corrplot(sc_cor,
     tl.cex=.75,
     tl.col='black')
+```
+```{r droppredictorsandredocor}
+
 ```
 
 ### Gaussianity of the Response

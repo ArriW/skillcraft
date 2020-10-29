@@ -9,7 +9,7 @@ bibliography: ./inline/bibliography.bib
 ```{bash git,eval=FALSE  , include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "Dropping an outliar. Working on post model testing"
+git commit -m "Adjusted modeling after outliar was removed"
 git push
 ```
 ```{r setup, include=FALSE}
@@ -27,8 +27,6 @@ library(leaps) #for computing stepwise regression
 #library(SC2API) #starcraft 2 API
 library(broom) #grabbing p-value
 library(GGally) # ggpairs
-
-
 ```
 ```{r settoken, include=FALSE}
 #set_token("33be678eb46d4f51ac36f72218abcdd2", #"Sb3QWR8A9mN9s0XgAt5w4j0FttY84pkg")
@@ -69,7 +67,6 @@ This dataset is a sample of averaged in-game metrics of Starcraft II players who
 ```{r}
 colnames(sc)
 ```
-
 The appendix covers each in depth but the following are highlighted because their used in the final analysis.
 
 **LeagueIndex** is was covered thoroughy in the above section.
@@ -77,8 +74,6 @@ The appendix covers each in depth but the following are highlighted because thei
 \center !['@SC2IIWCSGlobal'](./inline/StarCraft-II-Leagues.png) \center
 
 **Perception Action Cycles (PACs)** are the circular flow of information between an organism and its environment where a sensor-guided sequence of behaviors are iteratively followed towards a goal @Perception.In this dataset PACs are aggregate of screen movements where PAC is a screen fixation of containing at least one action @UCI.
-
-
 
 # Cleanliness
 
@@ -116,8 +111,6 @@ In addition to the missing values we have a clear error with the total hours of 
 describe(sc$TotalHours)
 sc<-filter(sc,sc$TotalHours<1000000)
 ```
-
-
 ```{r finalclean, include=FALSE ,echo=FALSE}
 sc<-sc%>%
   drop_na()%>%
@@ -151,7 +144,7 @@ sc<-sc%>%
 colnames(sc)
 ```
 
-```{r statsatlevels}
+```{r statsatlevels, include=FALSE}
 #sc$LeagueIndex <- as.factor(sc$LeagueIndex)
 #ggplot(sc, aes(x=LeagueIndex, y=ActionsInPAC)) + 
 #  geom_boxplot()
@@ -167,9 +160,15 @@ summary(sc)
 
 ### Correlation Plot
 
-Visually we can see that LeagueIndex has a relatively strong correlation with APM, SelectByHotkeys, AssignToHotkeys, NumberofPACs, GapBetweenPACs, and Action Latency all are strongly correlated with LeagueIndex. Some of these predictors may be the best choices for model, although its worth noting at this point many of the predictor values also have fairly strong correlations within themselves which may be a sign of confoundance. This is not too surprising because many of these metrics capture rate of actions in slightly difference forms. For example APM and NumberOfPacs likely have a strict mathematical relationship where approximately $NumberOfPACs=APM*MatchDurationMinutes$.
+Visually we can see that LeagueIndex has a relatively strong correlation with APM, SelectByHotkeys, AssignToHotkeys, NumberofPACs, GapBetweenPACs, and Action Latency. Some of these predictors may be the best choices for model, although its worth noting at this point many of the predictor values also have fairly strong correlations within themselves which may cause multiplecolinearity in a model. This is not too surprising because many of these metrics capture rate of actions in slightly difference forms. For example APM and NumberOfPacs likely have a strict mathematical relationship where approximately $NumberOfPACs=APM*MatchDurationMinutes$. The slight differences between these metrixs them could have some deep explanatory power but that level of explore ration is beyond the scope of this analysis.
 
-After trimming a all inclusive model, this idea will be revisited with the remaining parameters.
+[Remove some redundant items here]
+Before trimming an all the large modelthe following columns will be removed.
+- Remove Action Latency
+- Remove GapBetweenPACs - this is redundant but more importantly 
+- Remove Number of PACS
+- Remove SelectbyHotkeys
+
 ```{r echo=FALSE}
 sc_cor<-cor(select_if(sc,is.numeric),use = "complete.obs")
 sc_cor_plot<-corrplot(sc_cor,
@@ -208,7 +207,7 @@ qqnorm(scale(sc$LeagueIndex))
 
 ### Gaussanity of the Predictors
 
-Taking a glance at the predictors with high correlation to LeagueIndex we find that many have none normal distributions. Which could affect our models gaussanity of a resulting model
+Taking a glance at the predictors with high correlation to LeagueIndex we find that many have none normal distributions. Which could affect our models gaussanity of a resulting model.
 
 ```{r,echo=FALSE, collapse=TRUE}
 HoursPerWeek_Normal<-shapiro.test(sc$HoursPerWeek)
@@ -229,7 +228,9 @@ qqnorm(scale(sc$APM))
 
 # Model Specifications
 
-## Model Assumptions
+## Model Assumptions at Risk
+
+
 
 ## Stepwise Linear Regression:
 
@@ -245,8 +246,8 @@ sc_lm_r1<-lm(LeagueIndex~ActionLatency+AssignToHotkeys+APM+MinimapAttacks,sc)
 summary(sc_lm_r1,cor=T)
 
 #Normality
-qqnorm(residuals(sc_lm_r1))
-shapiro.test(residuals(sc_lm_r1))
+#qqnorm(residuals(sc_lm_r1))
+#shapiro.test(residuals(sc_lm_r1))
 ```
 
 ## Manual Regression Iterations
@@ -254,17 +255,11 @@ shapiro.test(residuals(sc_lm_r1))
 sc_lm<-lm(LeagueIndex~.-GameID,sc)
 sc_lm_1<-update(sc_lm,.~.-ComplexAbilitiesUsed)
 sc_lm_2<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks)
-sc_lm_3<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours)
-sc_lm_4<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM)
-sc_lm_5<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM-UniqueUnitsMade)
-sc_lm_6<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM-UniqueUnitsMade-ComplexUnitsMade)
-sc_lm_7<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM-UniqueUnitsMade-ComplexUnitsMade-ActionsInPAC)
-sc_lm_8<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM-UniqueUnitsMade-ComplexUnitsMade-ActionsInPAC-TotalMapExplored)
-sc_lm_9<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-TotalHours-APM-UniqueUnitsMade-ComplexUnitsMade-ActionsInPAC-TotalMapExplored-Age)
+sc_lm_3<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-APM)
+sc_lm_4<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-APM-UniqueUnitsMade)
 
-anova(sc_lm_1)$'Pr(>F)'
+#anova(sc_lm_1)$'Pr(>F)'
 ```
-
 
 *5 Justify your choices using hypothesis testing and confidence intervals for selection of parameters. You should compare multiple model choices in describing this relationship, including the null model. *
 
@@ -276,40 +271,45 @@ The null model summary:
 ```{r, echo=FALSE}
 summary(sc_lm)
 ```
-After 9 iterations the all predictors were significant. The final iteration provided:
+After 4 iterations the all predictors were significant. The final iteration provided:
 ```{r, echo=FALSE}
-summary(sc_lm_9)
+summary(sc_lm_4)
 ```
 ### Testing for Signifance of Modeling
 
-Our initial $H_o$ is there is no systematic structure to the response LeagueIndex. Our alternative $H_a$ is there is some relation such that $LeagueIndex=X\beta+\epsilon$, where X all other variables with the exception of index GameID. Without much surprise using 18 predictor variables results of a very small p-value of ~`r glance(sc_lm)$p.value `. Over the iteration this does not change in a notable fashion across the 9 other models as the last model also results in a p-value`r glance(sc_lm_9)$p.value`. Thus all iterations of the model we can reject the null hypothesis suggesting that we should further investigate the explaintory power of our alternative hypthosises. 
+Our initial $H_o$ is there is no systematic structure to the response LeagueIndex. Our alternative $H_a$ is there is some relation such that $LeagueIndex=X\beta+\epsilon$, where X all other variables with the exception of index GameID. Without much surprise using 18 predictor variables results of a very small p-value of ~`r glance(sc_lm)$p.value `. Over the iteration this does not change in a notable fashion across the 9 other models as the last model also results in a p-value`r glance(sc_lm_4)$p.value`. Thus all iterations of the model we can reject the null hypothesis suggesting that we should further investigate the explanatory power of our alternative hypothesis. 
 
 ### Noramlity of Residuals Both Models
+
 ```{r}
 plot(sc_lm)
-plot(sc_lm_9)
+plot(sc_lm_4)
 ```
 
 ## Testing for Signifance Between Models
 
 
-
-To compare  Performing an ANOVA test we find that there is a significant difference in the models (see table below), but the $adjR^2$ is barely different. Starting at `r round(summary(sc_lm)[["adj.r.squared"]],2)` and ending at `r round(summary(sc_lm_9)[["adj.r.squared"]],2)`.
+To compare  Performing an ANOVA test we find that there is a significant difference in the models (see table below), but the $adjR^2$ is barely different. Starting at `r round(summary(sc_lm)[["adj.r.squared"]],2)` and ending at `r round(summary(sc_lm_4)[["adj.r.squared"]],2)`.
 
 ```{r}
-confint(sc_lm_9)
+confint(sc_lm_4)
 ```
 
 [Question for Colin]: What is my anova test telling me when i construct this? That there is a significant difference in the residuals?
 ```{r,echo=FALSE}
-anova(sc_lm,sc_lm_1,sc_lm_2,sc_lm_3,sc_lm_4,sc_lm_5,sc_lm_6,sc_lm_7,sc_lm_8,sc_lm_9)
+anova(sc_lm,sc_lm_1,sc_lm_2,sc_lm_3,sc_lm_4)
+anova(sc_lm,sc_lm_4)
 ```
 
 ### Exploring the chosen model
+
+Evaluate the goodness of fit of the model in terms of R2
+and the standard errors, and the major sources of uncertainty. This includes parameter uncertainty, as well as structural uncertainty in the model. 
 ```{r, collapse=TRUE}
-summary(sc_lm_9,cor='T')
-plot(sc_lm_9)
+summary(sc_lm_4,cor='T')
+plot(sc_lm_4)
 ```
+
 ```{r alternative model,include=FALSE}
 lm_APM<-lm(APM~LeagueIndex*(.-LeagueIndex-GameID),sc)
 summary(lm_APM)
@@ -324,7 +324,10 @@ Describe your model, how you arrived at it, its goodness of fit, its significanc
 
 ## Predict
 
+Evaluate the predictive power of the model – particularly, how effective does the model appear to be at making predictions of future observations or the mean response. How might these predictions be unreliable? What are the limits of the prediction power, and where do we fall into extrapolation? 
+
 ## Prelude to final
+
 *7 Describe your proposed research question for the final. How will you revise your original research question? What issues have you encountered so far? What assumptions do you think you need to (re-)evaluate? *
 
 

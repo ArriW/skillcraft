@@ -9,7 +9,7 @@ bibliography: ./inline/bibliography.bib
 ```{bash git,eval=FALSE  , include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "Editting. Removing overkill for midterm 2. Touching up the prelude to final. Pre-model confounding."
+git commit -m "Model-Model H_o testing clarifications."
 git push
 ```
 ```{r setup, include=FALSE}
@@ -138,9 +138,6 @@ sc<-sc%>%
          ActionLatency=ActionLatency*1000)
 ```
 
-```{r}
-colnames(sc)
-```
 
 ```{r statsatlevels, include=FALSE}
 #sc$LeagueIndex <- as.factor(sc$LeagueIndex)
@@ -295,17 +292,19 @@ plot(sc_lm_4)
 ## Testing for Signifance Between Models
 
 
-To compare  Performing an ANOVA test we find that there is a significant difference in the models (see table below), but the $adjR^2$ is barely different. Starting at `r round(summary(sc_lm)[["adj.r.squared"]],2)` and ending at `r round(summary(sc_lm_4)[["adj.r.squared"]],2)`.
+Our second null test is to determine if the the starting and final model's have significantly different residuals. The $H_o$ specifically is that $RSS_{lm1}$ = $RSS_{lm4}$ and $H_a$ is that $RSS_{lm1}$ \neq $RSS_{lm4}$. Performing an ANOVA test we find that there is not significant difference in the models at $\alpha=5\%$ such that we cannot reject the $H_o$.(ANOVA see table below). Additionaly their $adjR^2$ is barely different. Starting at `r round(summary(sc_lm)[["adj.r.squared"]],2)` and ending at `r round(summary(sc_lm_4)[["adj.r.squared"]],2)`.
+
+```{r,echo=FALSE}
+anova(sc_lm,sc_lm_1,sc_lm_2,sc_lm_3,sc_lm_4)
+anova(sc_lm,sc_lm_4)
+```
 
 ```{r}
 confint(sc_lm_4)
 ```
 
-[Question for Colin]: What is my anova test telling me when i construct this? That there is a significant difference in the residuals?
-```{r,echo=FALSE}
-anova(sc_lm,sc_lm_1,sc_lm_2,sc_lm_3,sc_lm_4)
-anova(sc_lm,sc_lm_4)
-```
+
+
 
 ### Exploring the chosen model
 

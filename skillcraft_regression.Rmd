@@ -9,7 +9,7 @@ bibliography: ./inline/bibliography.bib
 ```{bash git,eval=FALSE  , include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "Further cleaning and visualizations."
+git commit -m "fixing html."
 git push
 ```
 ```{r setup, include=FALSE}
@@ -197,7 +197,7 @@ Visually determining trends between the predictors and the response with a respo
 Upon aspecting hours 
 ```{r}
 
-p1<-ggplot(sc, aes(x=factor(LeagueIndex), y=age)) +
+p1<-ggplot(sc, aes(x=factor(LeagueIndex), y=Age)) +
   geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
                  geom="pointrange", color="darkblue")+ coord_flip()
 p2<-ggplot(sc, aes(x=factor(LeagueIndex), y=HoursPerWeek)) +
@@ -301,12 +301,12 @@ qqnorm(scale(sc$APM))
 
 I dropped age for as a insignificant predictor, that may mean its not too late for me!
 ```{r,echo=FALSE}
-#summary(sc_lm<-lm(LeagueIndex~.,sc))
-#summary(sc_lm_1<-update(sc_lm,.~.-UniqueUnitsMade ,sc))
-#summary(sc_lm_2<-update(sc_lm,.~.-Age-UniqueUnitsMade))
-#summary(sc_lm_3<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade))
-summary(sc_lm_4<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade-MinimapRightClicks),cor='T')
-sc_lm_5<-update(sc_lm,.~.-Age-TotalMapExplored-UniqueUnitsMade-MinimapRightClicks-ComplexUnitsMade)
+sc_lm<-lm(LeagueIndex~.,sc)
+sc_lm_1<-update(sc_lm,.~.-UniqueUnitsMade ,sc)
+sc_lm_2<-update(sc_lm,.~.-Age-UniqueUnitsMade)
+sc_lm_3<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade)
+sc_lm_4<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade-MinimapRightClicks)
+sc_lm_final<-update(sc_lm,.~.-Age-TotalMapExplored-UniqueUnitsMade-MinimapRightClicks-ComplexUnitsMade)
 
 #anova(sc_lm_1)$'Pr(>F)'
 ```
@@ -323,7 +323,7 @@ summary(sc_lm)
 ```
 After 4 iterations the all predictors were significant. The final iteration provided:
 ```{r, echo=FALSE}
-summary(sc_lm_4)
+summary(sc_lm_final)
 ```
 ### Testing for Signifance of Modeling
 
@@ -333,17 +333,16 @@ Our initial $H_o$ is there is no systematic structure to the response LeagueInde
 
 ```{r}
 plot(sc_lm)
-plot(sc_lm_4)
+plot(sc_lm_final)
 ```
 
 ## Testing for Signifance Between Models
 
 
-Our second null test is to determine if the the starting and final model's have significantly different residuals. The $H_o$ specifically is that $RSS_{lm1}$ = $RSS_{lm4}$ and $H_a$ is that $RSS_{lm1}$ \neq $RSS_{lm4}$. Performing an ANOVA test we find that there is not significant difference in the models at $\alpha=5\%$ such that we cannot reject the $H_o$.(ANOVA see table below). Additionaly their $adjR^2$ is barely different. Starting at `r round(summary(sc_lm)[["adj.r.squared"]],2)` and ending at `r round(summary(sc_lm_4)[["adj.r.squared"]],2)`.
+Our second null test is to determine if the the starting and final model's have significantly different residuals. The $H_o$ specifically is that $RSS_{lm1}$ = $RSS_{lm4}$ and $H_a$ is that $RSS_{lm1}$ \neq $RSS_{lmfinal}$. Performing an ANOVA test we find that there is not significant difference in the models at $\alpha=5\%$ such that we cannot reject the $H_o$.(ANOVA see table below). Additionally their $adjR^2$ is barely different. Starting at `r round(summary(sc_lm)[["adj.r.squared"]],2)` and ending at `r round(summary(sc_lm_final)[["adj.r.squared"]],2)`.
 
 ```{r,echo=FALSE}
-anova(sc_lm,sc_lm_1,sc_lm_2,sc_lm_3,sc_lm_4)
-anova(sc_lm,sc_lm_4)
+anova(sc_lm,sc_lm_final)
 ```
 
 ```{r}

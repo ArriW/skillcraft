@@ -9,7 +9,7 @@ bibliography: ./inline/bibliography.bib
 ```{bash git,eval=FALSE  , include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "Model-Model H_o testing clarifications."
+git commit -m "Further cleaning and visualizations."
 git push
 ```
 ```{r setup, include=FALSE}
@@ -19,8 +19,10 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(dbplyr) #piping
 library(ggplot2) #plotting
+library(gridExtra)# easy plot grids
 library(Hmisc) # for correlation matrix
 library(corrplot) # For correlation matrix graphic
+
 #library(ggthemes) #for ggplot Themes
 
 #library(SC2API) #starcraft 2 API
@@ -37,7 +39,7 @@ library(broom) #grabbing p-value
 ```
 # Introduction
  
-Videogames are one of my favorite past times. As a player who particapates in ranked play, I've always kept my eye on the forefront of global competitions. One of the most notable games to establish a global competitive scene backed by paid professionals was the real-time strategy game (RTS) Starcraft II (SC2). In 2013 the top 10 starcraft players by earnings made nearly four-million dollars combined from their winnings alone @Winnings2019. Watching top-caliber players reflexes and control astonishing is even seasoned videogame enthusiasts. At the 2019 StarCraft II World Championship Finale, I and many others packed into the arena to see what these professions could do firsthand.
+Videogames are one of my favorite past times. As a player who participates in ranked play, I've always kept my eye on the forefront of global competitions. One of the most notable games to establish a global competitive scene backed by paid professionals was the real-time strategy game (RTS) Starcraft II (SC2). In 2013 the top 10 starcraft players by earnings made nearly four-million dollars combined from their winnings alone @Winnings2019. Watching top-caliber players reflexes and control astonishing is even seasoned videogame enthusiasts. At the 2019 StarCraft II World Championship Finale, I and many others packed into the arena to see what these professions could do firsthand.
 
 !['@SC2IIWCSGlobal'](./inline/WCS.png)
 
@@ -103,12 +105,20 @@ sc_describe[["LeagueIndex"]][["counts"]][2]
 print('Hours Per Week Lower Extreme Values')
 sc_describe[["HoursPerWeek"]][["extremes"]][0]
 ```
-In addition to the missing values we have a clear error with the total hours of one player. $GameID = 5140$ has 1,000,000 total hours that equates to 114 years of game time. If we assumed one extra 0 was added the player would still have 14 years of played time on a game that is only 10 years old as of a 2020. Removing two 0s equates to 1.4 years of played time which is much more realistic. Removing 3 zeros results in `r .14*365` days of played time and that seems just as realistic. There is not a clear path to extrapolate this player's true total hours so their data will be dropped from the analysis. This was originally detected during modeling, but brought earlier into that analysis because how obiviously unintentional this value is.
+In addition to the missing values we have a clear error with the total hours of one player. $GameID = 5140$ has 1,000,000 total hours that equates to 114 years of game time. If we assumed one extra 0 was added the player would still have 14 years of played time on a game that is only 10 years old as of a 2020. Removing two 0s equates to 1.4 years of played time which is much more realistic. Removing 3 zeros results in `r .14*365` days of played time and that seems just as realistic. There is not a clear path to extrapolate this player's true total hours so their data will be dropped from the analysis. This was originally detected during modeling, but brought earlier into that analysis because how obviously unintentional this value is.
 
 ```{r,echo=FALSE}
 describe(sc$TotalHours)
 sc<-filter(sc,sc$TotalHours<1000000)
 ```
+Finally, upon preforming a visual inspection on the data hoursperweek contains max value of 168. Considering there are 168 hours in a week its not plausible for a individual player to do this. There could be multiple players using this account making this possible. Or in a much neater prospect maybe this player is actually an AI like google's DeepMind [https://deepmind.com/blog/article/alphastar-mastering-real-time-strategy-game-starcraft-ii]. Either way this observation will be kept because what is realistic cutoff for the hours per week is not apparent and after removing the observation the next max value is 140 which seems almost as unrealistic.
+
+Its worth noting that dropping this or a handful of values far from combats all the issues encouterable through Hours Per Week and or total hours. Multiple players could be using any of the accounts. More likely then that many of these accounts could be smurf accounts. Smurfing is when a player makes a additional accounts to have a match making rating reset [https://www.lol-smurfs.com/blog/what-is-a-smurf-account/]. A common reason for doing this is to dominate the competition until their rating adapts to their skill level.
+
+```{r,echo=FALSE}
+sc<-filter(sc,sc$HoursPerWeek<168)
+```
+
 ```{r finalclean, include=FALSE ,echo=FALSE}
 sc<-sc%>%
   drop_na()%>%
@@ -155,15 +165,16 @@ summary(sc)
 
 ### Correlation Plot
 
-Visually we can see that LeagueIndex has a relatively strong correlation with APM, SelectByHotkeys, AssignToHotkeys, NumberofPACs, GapBetweenPACs, and Action Latency. Some of these predictors may be the best choices for model, although its worth noting at this point many of the predictor values also have fairly strong correlations within themselves which may cause multiplecolinearity in a model. This is not too surprising because many of these metrics capture rate of actions in slightly difference forms. For example APM and NumberOfPacs likely have a strict mathematical relationship where approximately $NumberOfPACs=APM*MatchDurationMinutes$. The slight differences between these metrixs them could have some deep explanatory power but that level of explore ration is beyond the scope of this analysis.
+Visually we can see that LeagueIndex has a relatively strong correlation with APM, SelectByHotkeys, AssignToHotkeys, NumberofPACs, GapBetweenPACs, and Action Latency. Some of these predictors may be the best choices for model, although its worth noting at this point many of the predictor values also have fairly strong correlations within themselves which may cause multiplecolinearity in a model. This is not too surprising because many of these metrics capture rate of actions in slightly difference forms. For example APM and NumberOfPacs likely have a strict mathematical relationship where approximately $NumberOfPACs=APM*MatchDurationMinutes$. The slight differences between these metrics them could have some deep explanatory power but that level of explore ration is beyond the scope of this analysis.
 
 The following columns will be dropped because plausible confoundance with APMs:
 - Remove Action Latency 
-- Remove GapBetweenPACs ^[Another issue with this is that its unist do not seem to align with the discription. Before and after the unit transformation GapBetween PACs results in periods that dont make since for the expected duration of SC2 matches.)]
-- Remove Number of PACS
-- Remove SelectbyHotke
+- Remove GapBetweenPACs ^[Another issue with this is that its unist do not seem to align with the discription. Before and after the unit transformation GapBetweenPACs results in periods that dont make since for the expected duration of SC2 matches.)]
+- Remove NumberofPACS
+- Remove SelectbyHotkey
+- Remove ActionsInPAC
 
-Focusing exclusively on APMs fit into an Occam's razor appoarch by reducing the.
+Focusing exclusively on APMs fit into an Occam's razor approach by the models footprint.
 
 ```{r echo=FALSE}
 sc_cor<-cor(select_if(sc,is.numeric),use = "complete.obs")
@@ -172,9 +183,38 @@ sc_cor_plot<-corrplot(sc_cor,
     tl.col='black')
 ```
 ```{r droppredictorsandredocor}
+sc<-sc%>%select(!c(GameID,ActionLatency,GapBetweenPACs,NumberOfPACs,SelectByHotkeys,ActionsInPAC))
+```
+
+```{r}
+sc
+```
+
+### Visual Inspection
+
+Visually determining trends between the predictors and the response with a response is that ordinal requires tossing aside scatter plots for a better suited tools. In a visualization like this I prefer to utilize Violinplots in[https://chartio.com/learn/charts/violin-plot-complete-guide/}
+
+Upon aspecting hours 
+```{r}
+
+p1<-ggplot(sc, aes(x=factor(LeagueIndex), y=age)) +
+  geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
+                 geom="pointrange", color="darkblue")+ coord_flip()
+p2<-ggplot(sc, aes(x=factor(LeagueIndex), y=HoursPerWeek)) +
+  geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
+                 geom="pointrange", color="darkblue")+ coord_flip()
+p3<-ggplot(sc, aes(x=factor(LeagueIndex), y=TotalHours)) +
+  geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
+                 geom="pointrange", color="darkblue")+ coord_flip()
+p4<-ggplot(sc, aes(x=factor(LeagueIndex), y=APM)) +
+  geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
+                 geom="pointrange", color="darkblue")+ coord_flip()
+grid.arrange(p1,p2,p3,p4,ncol=2)
 
 ```
 
+  
+  
 ### Gaussianity of the Response
 
 When using Shapiro-Wilk W test test on response LeagueIndex we find that we can reject the idea that the response come from a normally distributed population. Besides the obvious issues with performing a W test with an ordinal response, the the response has a heavy tail with a mean of `r round(mean(sc$LeagueIndex),2)`. Additionally we cannot assume the levels between LeagueIndexes are uniforming spaced. 
@@ -192,6 +232,10 @@ ggplot(sc, aes(LeagueIndex)) +
   xlab("League Index (Bronze(1) to Grand Master(7)")+
   ylab("Count")
 
+```
+
+
+```{r, include=FALSE}
 ggplot(sc, aes(LeagueIndex)) +
   geom_density()+
   ggtitle(
@@ -254,12 +298,15 @@ qqnorm(scale(sc$APM))
 ```
 
 ## Manual Regression Iterations
+
+I dropped age for as a insignificant predictor, that may mean its not too late for me!
 ```{r,echo=FALSE}
-sc_lm<-lm(LeagueIndex~.-GameID,sc)
-sc_lm_1<-update(sc_lm,.~.-ComplexAbilitiesUsed)
-sc_lm_2<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks)
-sc_lm_3<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-APM)
-sc_lm_4<-update(sc_lm,.~.-ComplexAbilitiesUsed-MinimapRightClicks-APM-UniqueUnitsMade)
+#summary(sc_lm<-lm(LeagueIndex~.,sc))
+#summary(sc_lm_1<-update(sc_lm,.~.-UniqueUnitsMade ,sc))
+#summary(sc_lm_2<-update(sc_lm,.~.-Age-UniqueUnitsMade))
+#summary(sc_lm_3<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade))
+summary(sc_lm_4<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade-MinimapRightClicks),cor='T')
+sc_lm_5<-update(sc_lm,.~.-Age-TotalMapExplored-UniqueUnitsMade-MinimapRightClicks-ComplexUnitsMade)
 
 #anova(sc_lm_1)$'Pr(>F)'
 ```

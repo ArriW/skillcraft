@@ -9,7 +9,7 @@ bibliography: ./inline/bibliography.bib
 ```{bash git,eval=FALSE  , include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "fixing html."
+git commit -m "Violin plots"
 git push
 ```
 ```{r setup, include=FALSE}
@@ -111,13 +111,9 @@ In addition to the missing values we have a clear error with the total hours of 
 describe(sc$TotalHours)
 sc<-filter(sc,sc$TotalHours<1000000)
 ```
-Finally, upon preforming a visual inspection on the data hoursperweek contains max value of 168. Considering there are 168 hours in a week its not plausible for a individual player to do this. There could be multiple players using this account making this possible. Or in a much neater prospect maybe this player is actually an AI like google's DeepMind [https://deepmind.com/blog/article/alphastar-mastering-real-time-strategy-game-starcraft-ii]. Either way this observation will be kept because what is realistic cutoff for the hours per week is not apparent and after removing the observation the next max value is 140 which seems almost as unrealistic.
+Finally, preforming basic a inspection on hoursperweek a max value of 168 was discovered. Considering there are 168 hours in a week its not plausible for a individual player to do this. There could be multiple players using this account making this possible. Another prospect is that this player is actually an AI like google's DeepMind [https://deepmind.com/blog/article/alphastar-mastering-real-time-strategy-game-starcraft-ii]. Either way this observation will be kept because what is realistic cutoff for the hours per week is not apparent and after removing the observation the next max value is 140 which seems almost as unrealistic.
 
-Its worth noting that dropping this or a handful of values far from combats all the issues encouterable through Hours Per Week and or total hours. Multiple players could be using any of the accounts. More likely then that many of these accounts could be smurf accounts. Smurfing is when a player makes a additional accounts to have a match making rating reset [https://www.lol-smurfs.com/blog/what-is-a-smurf-account/]. A common reason for doing this is to dominate the competition until their rating adapts to their skill level.
-
-```{r,echo=FALSE}
-sc<-filter(sc,sc$HoursPerWeek<168)
-```
+Its worth noting that dropping any amount of high hour outliers far from combats all the issues encouterable through HoursPerWeek and or TotalHours. Multiple players could be using any of the accounts even if the hour are not high. More likely then that many of these accounts could be smurf accounts. Smurfing is when a player makes a additional accounts to have a match making rating reset [https://www.lol-smurfs.com/blog/what-is-a-smurf-account/]. A common reason for doing this is to dominate the competition until their rating adapts to their skill level.
 
 ```{r finalclean, include=FALSE ,echo=FALSE}
 sc<-sc%>%
@@ -156,7 +152,7 @@ sc<-sc%>%
 #lm(LeagueIndex~APM,sc)
 ```
 
-## Summary Statistics
+## Summary Statistics and Plots
 
 ```{r}
 summary(sc)
@@ -174,7 +170,7 @@ The following columns will be dropped because plausible confoundance with APMs:
 - Remove SelectbyHotkey
 - Remove ActionsInPAC
 
-Focusing exclusively on APMs fit into an Occam's razor approach by the models footprint.
+Focusing exclusively on APMs fit into an Occam's razor approach by minimizing the dimensionality of the models space.
 
 ```{r echo=FALSE}
 sc_cor<-cor(select_if(sc,is.numeric),use = "complete.obs")
@@ -186,16 +182,16 @@ sc_cor_plot<-corrplot(sc_cor,
 sc<-sc%>%select(!c(GameID,ActionLatency,GapBetweenPACs,NumberOfPACs,SelectByHotkeys,ActionsInPAC))
 ```
 
-```{r}
-sc
-```
-
 ### Visual Inspection
 
-Visually determining trends between the predictors and the response with a response is that ordinal requires tossing aside scatter plots for a better suited tools. In a visualization like this I prefer to utilize Violinplots in[https://chartio.com/learn/charts/violin-plot-complete-guide/}
+Visually determining trends between the predictors and the response with a response is that ordinal requires tossing aside scatter plots for a better suited tools. Violinplots will be used to gauge the  [https://chartio.com/learn/charts/violin-plot-complete-guide/}. 
 
-Upon aspecting hours 
-```{r}
+**Age** seems have a no sigfnicant relationship with LeaguIndex. The variance at the highlest level seems to be much narrower then that at the lower levels. 
+
+**HourPerWeek** 
+
+**
+```{r, echo=FALSE,compact=FALSE, error=FALSE}
 
 p1<-ggplot(sc, aes(x=factor(LeagueIndex), y=Age)) +
   geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
@@ -203,17 +199,46 @@ p1<-ggplot(sc, aes(x=factor(LeagueIndex), y=Age)) +
 p2<-ggplot(sc, aes(x=factor(LeagueIndex), y=HoursPerWeek)) +
   geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
                  geom="pointrange", color="darkblue")+ coord_flip()
-p3<-ggplot(sc, aes(x=factor(LeagueIndex), y=TotalHours)) +
+p3<-ggplot(sc, aes(x=factor(LeagueIndex), y=log(TotalHours))) +
   geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
                  geom="pointrange", color="darkblue")+ coord_flip()
 p4<-ggplot(sc, aes(x=factor(LeagueIndex), y=APM)) +
   geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
                  geom="pointrange", color="darkblue")+ coord_flip()
 grid.arrange(p1,p2,p3,p4,ncol=2)
+###
+p1<-ggplot(sc, aes(x=factor(LeagueIndex), AssignToHotkeys)) +
+  geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
+                 geom="pointrange", color="darkblue")+ coord_flip()
 
+p2<-ggplot(sc, aes(x=factor(LeagueIndex), y=UniqueHotkeys)) +
+  geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
+                 geom="pointrange", color="darkblue")+ coord_flip()
+
+p3<-ggplot(sc, aes(x=factor(LeagueIndex), y=log(MinimapAttacks))) +
+  geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
+                 geom="pointrange", color="darkblue")+ coord_flip()
+p4<-ggplot(sc, aes(x=factor(LeagueIndex), y=log(MinimapRightClicks))) +
+  geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
+                 geom="pointrange", color="darkblue")+ coord_flip()
+grid.arrange(p1,p2,p3,p4,ncol=2)
+###
+p1<-ggplot(sc, aes(x=factor(LeagueIndex), TotalMapExplored)) +
+  geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
+                 geom="pointrange", color="darkblue")+ coord_flip()
+
+p2<-ggplot(sc, aes(x=factor(LeagueIndex), y=WorkersMade)) +
+  geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
+                 geom="pointrange", color="darkblue")+ coord_flip()
+
+p3<-ggplot(sc, aes(x=factor(LeagueIndex), y=UniqueUnitsMade)) +
+  geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
+                 geom="pointrange", color="darkblue")+ coord_flip()
+p4<-ggplot(sc, aes(x=factor(LeagueIndex), y=ComplexUnitsMade)) +
+  geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
+                 geom="pointrange", color="darkblue")+ coord_flip()
+grid.arrange(p1,p2,p3,p4,ncol=2)
 ```
-
-  
   
 ### Gaussianity of the Response
 
@@ -233,7 +258,6 @@ ggplot(sc, aes(LeagueIndex)) +
   ylab("Count")
 
 ```
-
 
 ```{r, include=FALSE}
 ggplot(sc, aes(LeagueIndex)) +
@@ -263,11 +287,6 @@ ggplot(sc, aes(scale(log(HoursPerWeek)))) +
   xlab("Hours Per Week")+
   ylab("Count")
 
-qqnorm(scale(sc$HoursPerWeek))
-```
-
-```{r}
-qqnorm(scale(sc$APM))
 ```
 
 # Model Specifications
@@ -338,7 +357,6 @@ plot(sc_lm_final)
 
 ## Testing for Signifance Between Models
 
-
 Our second null test is to determine if the the starting and final model's have significantly different residuals. The $H_o$ specifically is that $RSS_{lm1}$ = $RSS_{lm4}$ and $H_a$ is that $RSS_{lm1}$ \neq $RSS_{lmfinal}$. Performing an ANOVA test we find that there is not significant difference in the models at $\alpha=5\%$ such that we cannot reject the $H_o$.(ANOVA see table below). Additionally their $adjR^2$ is barely different. Starting at `r round(summary(sc_lm)[["adj.r.squared"]],2)` and ending at `r round(summary(sc_lm_final)[["adj.r.squared"]],2)`.
 
 ```{r,echo=FALSE}
@@ -348,9 +366,6 @@ anova(sc_lm,sc_lm_final)
 ```{r}
 confint(sc_lm_4)
 ```
-
-
-
 
 ### Exploring the chosen model
 
@@ -362,7 +377,7 @@ plot(sc_lm_4)
 ```
 
 ```{r alternative model,include=FALSE}
-lm_APM<-lm(APM~LeagueIndex*(.-LeagueIndex-GameID),sc)
+lm_APM<-lm(APM~LeagueIndex*(.),sc)
 summary(lm_APM)
 qqnorm(residuals(lm_APM))
 qqline(residuals(lm_APM))

@@ -9,7 +9,7 @@ bibliography: ./inline/bibliography.bib
 ```{bash git,eval=FALSE  , include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "Violin plots"
+git commit -m "Making a function for ViolinPlots"
 git push
 ```
 ```{r setup, include=FALSE}
@@ -39,7 +39,7 @@ library(broom) #grabbing p-value
 ```
 # Introduction
  
-Videogames are one of my favorite past times. As a player who participates in ranked play, I've always kept my eye on the forefront of global competitions. One of the most notable games to establish a global competitive scene backed by paid professionals was the real-time strategy game (RTS) Starcraft II (SC2). In 2013 the top 10 starcraft players by earnings made nearly four-million dollars combined from their winnings alone @Winnings2019. Watching top-caliber players reflexes and control astonishing is even seasoned videogame enthusiasts. At the 2019 StarCraft II World Championship Finale, I and many others packed into the arena to see what these professions could do firsthand.
+Videogames are one of my favorite past times. As a player who participates in ranked play, I've always kept my eye on the forefront of global competitions. One of the most notable games to establish a global competitive scene backed by paid professionals was the real-time strategy game (RTS) Starcraft II (SC2). In 2013 the top 10 starcraft players by earnings made nearly four-million dollars from their combined winnings @Winnings2019. Watching top-caliber players reflexes and control astonishing is even seasoned videogame enthusiasts. At the 2019 StarCraft II World Championship Finale, I and many others packed into the arena to see what these professions could do firsthand.
 
 !['@SC2IIWCSGlobal'](./inline/WCS.png)
 
@@ -158,7 +158,6 @@ sc<-sc%>%
 summary(sc)
 ```
 
-
 ### Correlation Plot
 
 Visually we can see that LeagueIndex has a relatively strong correlation with APM, SelectByHotkeys, AssignToHotkeys, NumberofPACs, GapBetweenPACs, and Action Latency. Some of these predictors may be the best choices for model, although its worth noting at this point many of the predictor values also have fairly strong correlations within themselves which may cause multiplecolinearity in a model. This is not too surprising because many of these metrics capture rate of actions in slightly difference forms. For example APM and NumberOfPacs likely have a strict mathematical relationship where approximately $NumberOfPACs=APM*MatchDurationMinutes$. The slight differences between these metrics them could have some deep explanatory power but that level of explore ration is beyond the scope of this analysis.
@@ -184,60 +183,31 @@ sc<-sc%>%select(!c(GameID,ActionLatency,GapBetweenPACs,NumberOfPACs,SelectByHotk
 
 ### Visual Inspection
 
-Visually determining trends between the predictors and the response with a response is that ordinal requires tossing aside scatter plots for a better suited tools. Violinplots will be used to gauge the  [https://chartio.com/learn/charts/violin-plot-complete-guide/}. 
+Visually determining trends between the predictors and the response with a response is that ordinal requires tossing aside scatter plots for a better suited tools. Violinplots will be used to gauge the linearity in relation to the response and distribution with variable at the varying levels https://chartio.com/learn/charts/violin-plot-complete-guide/. 
 
-**Age** seems have a no sigfnicant relationship with LeaguIndex. The variance at the highlest level seems to be much narrower then that at the lower levels. 
+**Age** the mean age of `r mean(sc$Age)` does not vary much across LeaguIndex such that there is no stark linear relationship. Altought the variance at the highlest level seems to be much narrower then that at the lower levels. 
 
 **HourPerWeek** 
 
 **
-```{r, echo=FALSE,compact=FALSE, error=FALSE}
+```{r colorvector}
+cbPalette <- c("#CC6600", "#999999", "#FFCC00", "#CCCFFF", "#CCFFFF","#0072B2", "#FF6600")
 
-p1<-ggplot(sc, aes(x=factor(LeagueIndex), y=Age)) +
-  geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
-                 geom="pointrange", color="darkblue")+ coord_flip()
-p2<-ggplot(sc, aes(x=factor(LeagueIndex), y=HoursPerWeek)) +
-  geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
-                 geom="pointrange", color="darkblue")+ coord_flip()
-p3<-ggplot(sc, aes(x=factor(LeagueIndex), y=log(TotalHours))) +
-  geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
-                 geom="pointrange", color="darkblue")+ coord_flip()
-p4<-ggplot(sc, aes(x=factor(LeagueIndex), y=APM)) +
-  geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
-                 geom="pointrange", color="darkblue")+ coord_flip()
-grid.arrange(p1,p2,p3,p4,ncol=2)
-###
-p1<-ggplot(sc, aes(x=factor(LeagueIndex), AssignToHotkeys)) +
-  geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
-                 geom="pointrange", color="darkblue")+ coord_flip()
+# To use for fills, add
+  #+scale_fill_manual(values=cbPalette)
 
-p2<-ggplot(sc, aes(x=factor(LeagueIndex), y=UniqueHotkeys)) +
-  geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
-                 geom="pointrange", color="darkblue")+ coord_flip()
+# To use for line and point colors, add
+  #scale_colour_manual(values=cbPalette)
 
-p3<-ggplot(sc, aes(x=factor(LeagueIndex), y=log(MinimapAttacks))) +
-  geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
-                 geom="pointrange", color="darkblue")+ coord_flip()
-p4<-ggplot(sc, aes(x=factor(LeagueIndex), y=log(MinimapRightClicks))) +
-  geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
-                 geom="pointrange", color="darkblue")+ coord_flip()
-grid.arrange(p1,p2,p3,p4,ncol=2)
-###
-p1<-ggplot(sc, aes(x=factor(LeagueIndex), TotalMapExplored)) +
-  geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
-                 geom="pointrange", color="darkblue")+ coord_flip()
+```
 
-p2<-ggplot(sc, aes(x=factor(LeagueIndex), y=WorkersMade)) +
-  geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
-                 geom="pointrange", color="darkblue")+ coord_flip()
+```{r}
+VioLeagueIndex<-function(predictor,logged=FALSE){
+  
+ggplot(sc, aes(x=factor(LeagueIndex), y=predictor, fill=factor(LeagueIndex))) + geom_violin(trim=FALSE, color="black")+scale_fill_manual(values=cbPalette) + stat_summary(fun.data=mean_sdl,geom="pointrange", color="black")+ coord_flip()+ggtitle("League Index by")
+}
 
-p3<-ggplot(sc, aes(x=factor(LeagueIndex), y=UniqueUnitsMade)) +
-  geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
-                 geom="pointrange", color="darkblue")+ coord_flip()
-p4<-ggplot(sc, aes(x=factor(LeagueIndex), y=ComplexUnitsMade)) +
-  geom_violin(trim=FALSE, fill='#A4A4A4', color="blue") + stat_summary(fun.data=mean_sdl, mult=1, 
-                 geom="pointrange", color="darkblue")+ coord_flip()
-grid.arrange(p1,p2,p3,p4,ncol=2)
+apply(sc,2,VioLeagueIndex)
 ```
   
 ### Gaussianity of the Response

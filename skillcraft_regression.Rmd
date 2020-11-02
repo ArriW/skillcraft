@@ -9,7 +9,7 @@ bibliography: ./inline/bibliography.bib
 ```{bash git,eval=FALSE  , include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "Making a function for ViolinPlots"
+git commit -m "Exploring the visual relationships and definining the natrue"
 git push
 ```
 ```{r setup, include=FALSE}
@@ -22,9 +22,6 @@ library(ggplot2) #plotting
 library(gridExtra)# easy plot grids
 library(Hmisc) # for correlation matrix
 library(corrplot) # For correlation matrix graphic
-
-#library(ggthemes) #for ggplot Themes
-
 #library(SC2API) #starcraft 2 API
 library(broom) #grabbing p-value
 #library(GGally)  ggpairs
@@ -39,23 +36,27 @@ library(broom) #grabbing p-value
 ```
 # Introduction
  
-Videogames are one of my favorite past times. As a player who participates in ranked play, I've always kept my eye on the forefront of global competitions. One of the most notable games to establish a global competitive scene backed by paid professionals was the real-time strategy game (RTS) Starcraft II (SC2). In 2013 the top 10 starcraft players by earnings made nearly four-million dollars from their combined winnings @Winnings2019. Watching top-caliber players reflexes and control astonishing is even seasoned videogame enthusiasts. At the 2019 StarCraft II World Championship Finale, I and many others packed into the arena to see what these professions could do firsthand.
+Videogames are one of my favorite past times. As a player who participates in ranked play, I've always kept my eye on the forefront of global competitions. One of the most notable games to establish a global competitive scene backed by paid professionals was the real-time strategy game (RTS) Starcraft II (SC2). In 2013 the top 10 starcraft players by earnings made nearly four-million dollars from their combined winnings @Winnings2019. Watching top-caliber players reflexes and control is astonishing to even seasoned videogame enthusiasts. At the 2019 StarCraft II World Championship Finale, many others and I packed into the arena to see what these professions could do firsthand.
 
 !['@SC2IIWCSGlobal'](./inline/WCS.png)
 
-The eye watering speeds they perform at is typically referenced in gaming terminology as actions per minute (APMS). Professionals take actions at such fastspeeds (high APMS) it becomes challenging to follow their overall strategy. So past pondering their sheer speed, I found it difficult to distinctly define what made these players professionals.
+The eye watering speeds they perform at is universally referenced in gaming terminology as actions per minute (APMS). Professionals take actions at such fastspeeds (high APMS) it becomes challenging to follow their overall strategy. So past pondering their sheer speed, I found it difficult to distinctly define what made these players professionals.
 
-To learn more about what defines talent in SC2 this analysis we will explore in game metrics in attempts to predict their rank in competitive mode. The dataset used was provided by ['@UCI'](https://archive.ics.uci.edu/ml/datasets/SkillCraft1+Master+Table+Dataset).
+To learn more about what defines talent in SC2 this analysis we will explore in game metrics in attempts to explain rank in competitive mode. The dataset used was provided by ['@UCI'](https://archive.ics.uci.edu/ml/datasets/SkillCraft1+Master+Table+Dataset).
 
 ## Goal
 
-To model the response LeagueIndex we will explore a sample of player data from a 2013 ranked season of Starcraft. The predictors provided summarize in game performance metrics for a season by player (GameID). The modeling process will consider all the predictor variables and then trim down until only significant predictors remain.  Variables will be vetted for multicolinearity and finally The model will be explored for to see if the BLUE assumptions hold.
+To model the response LeagueIndex a sample of player data from a 2013 ranked season of Starcraft will be explored. The predictors provided summarize in game performance metrics for a season by player (GameID). The modeling process will consider all the predictor variables and then trim down until only significant predictors remain.  Variables will be vetted for multicolinearity and finally The model will be explored for to see if the BLUE assumptions hold.
 
 ## Limitations of the Model
 
-The multivariate regression model used for the midterm 2 portions of this study explores the linear estimation of mean response of LeagueIndex estimated by predictors in the design matrix $X$. The validity of this models approximations assumes LeagueIndex is gaussian distributed and can vary continuously but LeagueIndex is a ordinal variable. The levels of LeagueIndex range (1:8) corresponding to player ranks Bronze, Silver, Gold, Platinum, Diamond, Master, Grand Master, and Professional league. Game ranking systems frequently are based on ELO/MMR that varies over a much larger range typically ~1200-3000. These ranges are then masked with medal ranks as listed above and then further subdivided into divisions within each medal @Leagues2019 . Using either MMR or having the subdivisions of each player would provide some much needed continuity but unfortunately neither of these metrics are available. These limitation will be revisited more specifically along the exploration, modeling, and the predictions of the values.
+The multivariate regression model used for the midterm 2 portions of this study explores the linear estimation of mean response of LeagueIndex estimated by predictors in the design matrix $X$. 
 
-A more suitable form of model for this regression would be based off a Polytonomous Logistic Regression for Ordinal Response (Proportional Odds Model) @OrdinalLog. These methods will be revisted for the final portion of this analysis.
+The assumptions of this models explanatory or predict power depends on the residual error of the model being gaussian. Considering LeagueIndex is ordinal variable it is doubtful to be statistically normaly or for the residuals of the model to be as a result.
+
+The levels of LeagueIndex range (1:8) corresponding to player ranks Bronze, Silver, Gold, Platinum, Diamond, Master, Grand Master, and Professional league. Game ranking systems frequently are based on ELO/MMR that varies over a much larger range typically ~1200-3000. These ranges are then masked with medal ranks as listed above and then further subdivided into divisions within each medal @Leagues2019 . Using either MMR or having the subdivisions of each player would provide some much needed continuity but unfortunately neither of these metrics are available. These limitation will be revisited more specifically along the exploration, modeling, and the predictions of the values.
+
+A more suitable form of model for this regression would be based off a Polytonomous Logistic Regression for Ordinal Response (Proportional Odds Model) @OrdinalLog. These methods will be revisited for the final portion of this analysis.
 
 # The Data Exploring
 
@@ -89,26 +90,25 @@ count_grandmaster<-count(sc%>%filter(LeagueIndex==8))
 print(paste('There are ',count_missing_age,' missing values in the age column. There are ',count_professional,' professional #players.'))
 ```
 
-The missing values are related exclusive to players with LeagueIndex equivalent to Professional Players (8). Where the `r count_professional` players with LeagueIndex=8 the age data is NA and the HoursPerWeek are 0. LeagueIndexes 1-7 are obtainable natural game play, to be a professional you would have to be part of a team. I am aiming to understand how players go from being average to good, less so elite to best so the NA associated with professionals will be dropped.
+The missing values are related exclusive to players with LeagueIndex equivalent to Professional Players (8). Where the `r count_professional` players with LeagueIndex=8 the age data is NA and the HoursPerWeek are 0. LeagueIndexes 1-7 are obtainable natural game play, to be a professional you would have to be part of a team. I am aiming to understand how players go from being average to good, less so elite to best.The 55 values associated with professionals will be dropped to resolve both issues.
 
 [Question for Colin]: Furthermore while Bronze through Master leagues (LeagueIndex's 1-6) may contain any number of players, Grand Master (LeagueIndex=7) may only contain 200 players. To only analyze portions of the data that are "more normal" the `r count_grandmaster` players LeagueIndex==7 data will be dropped.
 
 The following will call the columns that are problematic for the analysis. 
 ```{r showingnullvalues,echo=FALSE}
-sc_describe<-describe(sc)
-print('Age Values')
-sc_describe[["Age"]][["counts"]][2]
+#sc_describe<-describe(sc)
+#print('Age Values')
+#sc_describe[["Age"]][["counts"]][2]
 
-print('LeagueIndex Values')
-sc_describe[["LeagueIndex"]][["counts"]][2]
+#print('LeagueIndex Values')
+#sc_describe[["LeagueIndex"]][["counts"]][2]
 
-print('Hours Per Week Lower Extreme Values')
-sc_describe[["HoursPerWeek"]][["extremes"]][0]
+#print('Hours Per Week Lower Extreme Values')
+#sc_describe[["HoursPerWeek"]][["extremes"]][0]
 ```
 In addition to the missing values we have a clear error with the total hours of one player. $GameID = 5140$ has 1,000,000 total hours that equates to 114 years of game time. If we assumed one extra 0 was added the player would still have 14 years of played time on a game that is only 10 years old as of a 2020. Removing two 0s equates to 1.4 years of played time which is much more realistic. Removing 3 zeros results in `r .14*365` days of played time and that seems just as realistic. There is not a clear path to extrapolate this player's true total hours so their data will be dropped from the analysis. This was originally detected during modeling, but brought earlier into that analysis because how obviously unintentional this value is.
 
 ```{r,echo=FALSE}
-describe(sc$TotalHours)
 sc<-filter(sc,sc$TotalHours<1000000)
 ```
 Finally, preforming basic a inspection on hoursperweek a max value of 168 was discovered. Considering there are 168 hours in a week its not plausible for a individual player to do this. There could be multiple players using this account making this possible. Another prospect is that this player is actually an AI like google's DeepMind [https://deepmind.com/blog/article/alphastar-mastering-real-time-strategy-game-starcraft-ii]. Either way this observation will be kept because what is realistic cutoff for the hours per week is not apparent and after removing the observation the next max value is 140 which seems almost as unrealistic.
@@ -154,8 +154,8 @@ sc<-sc%>%
 
 ## Summary Statistics and Plots
 
-```{r}
-summary(sc)
+```{r, echo=FALSE}
+#summary(sc)
 ```
 
 ### Correlation Plot
@@ -164,7 +164,7 @@ Visually we can see that LeagueIndex has a relatively strong correlation with AP
 
 The following columns will be dropped because plausible confoundance with APMs:
 - Remove Action Latency 
-- Remove GapBetweenPACs ^[Another issue with this is that its unist do not seem to align with the discription. Before and after the unit transformation GapBetweenPACs results in periods that dont make since for the expected duration of SC2 matches.)]
+- Remove GapBetweenPACs ^[Another issue with this is that its unist do not seem to align with the description. Before and after the unit transformation GapBetweenPACs results in periods that dont make since for the expected duration of SC2 matches.)]
 - Remove NumberofPACS
 - Remove SelectbyHotkey
 - Remove ActionsInPAC
@@ -177,38 +177,66 @@ sc_cor_plot<-corrplot(sc_cor,
     tl.cex=.75,
     tl.col='black')
 ```
-```{r droppredictorsandredocor}
+```{r droppredictorsandredocor, echo=FALSE}
 sc<-sc%>%select(!c(GameID,ActionLatency,GapBetweenPACs,NumberOfPACs,SelectByHotkeys,ActionsInPAC))
 ```
-
+ 
 ### Visual Inspection
+
+```{r,include=FALSE}
+cor_hoursperweek<-paste(
+  round(cor(sc%>%filter(between(LeagueIndex,1,4))%>%select(LeagueIndex),
+    sc%>%filter(between(LeagueIndex,1,4))%>%select(HoursPerWeek))[1],
+    2),
+  "vs",
+  round(cor(sc%>%filter(between(LeagueIndex,4,7))%>%select(LeagueIndex),
+    sc%>%filter(between(LeagueIndex,4,7))%>%select(HoursPerWeek))[1],
+    2)
+)
+```
 
 Visually determining trends between the predictors and the response with a response is that ordinal requires tossing aside scatter plots for a better suited tools. Violinplots will be used to gauge the linearity in relation to the response and distribution with variable at the varying levels https://chartio.com/learn/charts/violin-plot-complete-guide/. 
 
-**Age** the mean age of `r mean(sc$Age)` does not vary much across LeaguIndex such that there is no stark linear relationship. Altought the variance at the highlest level seems to be much narrower then that at the lower levels. 
+MinimapAttacks, HoursPerweek, TotalHours, MinimapRightClicks, ComplexUnitsMade, ComplexAbilitiesUsed all have very long right tails. In search of gaussian predictors the listed variables are transformed using a square root transformation. The tail of some of predictors remainslong tail thus a log transformation would be preferable, but enough observations by GameID that contain at least 0 in the listed predictor values that the model would have to drop observation containing $-\infty$.
 
-**HourPerWeek** 
+**Age** the mean age of `r mean(sc$Age)` does not vary much across LeaguIndex such that there is no stark linear relationship. Although the variance at the highest level seems to be much narrower then that at the lower levels. 
+
+**HourPerWeek** The square root of HoursPerWeek has visibly little or no relation to LeagueIndex 1-4 where LeagueIndex 4-7 seems to have a strong linear trend resulting in `r cor_hoursperweek`. If HoursPerWeek survives the model trimming, it's bimodality may cause issues w model assumption $COV(Y)=\sigma^2I$.
+
+**TotalHours** The square root of HoursPerWeek positive linear trend with the response.
+
+**APM** has a strong linear relationship with the response. 
+
+**AssignToHotkeys** Has a notable fractional relationship with the response. This also may cause issues with the Gaussianity of the error.
 
 **
-```{r colorvector}
+
+```{r colorvector, echo=FALSE}
 cbPalette <- c("#CC6600", "#999999", "#FFCC00", "#CCCFFF", "#CCFFFF","#0072B2", "#FF6600")
-
-# To use for fills, add
-  #+scale_fill_manual(values=cbPalette)
-
-# To use for line and point colors, add
-  #scale_colour_manual(values=cbPalette)
-
 ```
 
-```{r}
-VioLeagueIndex<-function(predictor,logged=FALSE){
-  
-ggplot(sc, aes(x=factor(LeagueIndex), y=predictor, fill=factor(LeagueIndex))) + geom_violin(trim=FALSE, color="black")+scale_fill_manual(values=cbPalette) + stat_summary(fun.data=mean_sdl,geom="pointrange", color="black")+ coord_flip()+ggtitle("League Index by")
-}
-
-apply(sc,2,VioLeagueIndex)
+```{r transform, echo=FALSE}
+sc[,c("MinimapAttacks", "HoursPerWeek","TotalHours","MinimapRightClicks"
+      ,"ComplexUnitsMade","ComplexAbilitiesUsed")]<-sqrt(sc[,c("MinimapAttacks", "HoursPerWeek","TotalHours","MinimapRightClicks"
+      ,"ComplexUnitsMade","ComplexAbilitiesUsed")])
 ```
+
+```{r,echo=FALSE,error=FALSE, compact=TRUE}
+VioLeagueIndex<-function(predictor){
+  ggplot(sc, aes(x=factor(LeagueIndex), y=unlist(sc%>%select(all_of(predictor))), fill=factor(LeagueIndex))) + 
+    geom_violin(trim=FALSE, color="black")+scale_fill_manual(values=cbPalette)+
+    stat_summary(fun.data=mean_sdl,geom="pointrange", color="black")+ coord_flip()+
+    ggtitle(paste("LeagueIndex by",predictor))+
+    xlab("LeagueIndex")+ylab(predictor) + guides(fill= FALSE)
+    }
+
+plots<-lapply(colnames(sc)[2:length(colnames(sc))],VioLeagueIndex)
+
+do.call("grid.arrange", c(plots[1:4], ncol=2))
+do.call("grid.arrange", c(plots[5:9], ncol=2))
+do.call("grid.arrange", c(plots[10:13], ncol=2))
+```
+
   
 ### Gaussianity of the Response
 
@@ -240,23 +268,6 @@ ggplot(sc, aes(LeagueIndex)) +
 #+theme_wsj(base_size = 7.5,color = "white")
 
 qqnorm(scale(sc$LeagueIndex))
-```
-
-### Gaussanity of the Predictors
-
-Taking a glance at the predictors with high correlation to LeagueIndex we find that many have none normal distributions. Which could affect our models gaussanity of a resulting model.
-
-```{r,echo=FALSE, collapse=TRUE}
-HoursPerWeek_Normal<-shapiro.test(sc$HoursPerWeek)
-
-ggplot(sc, aes(scale(log(HoursPerWeek)))) +
-  geom_density()+
-  ggtitle(
-    'Hour per week distribution',subtitle = paste(HoursPerWeek_Normal[3],
-    " P-Value: ",HoursPerWeek_Normal[2]))+
-  xlab("Hours Per Week")+
-  ylab("Count")
-
 ```
 
 # Model Specifications

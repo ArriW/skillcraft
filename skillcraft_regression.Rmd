@@ -9,7 +9,7 @@ bibliography: ./inline/bibliography.bib
 ```{bash git,eval=FALSE  , include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "Exploring the visual relationships and definining the natrue"
+git commit -m "Wrapping up vio explaination. Cleaning up headers. Changing histogram for response"
 git push
 ```
 ```{r setup, include=FALSE}
@@ -70,7 +70,7 @@ colnames(sc)
 ```
 The appendix covers each in depth but the following are highlighted because their used in the final analysis.
 
-**LeagueIndex** is was covered thoroughy in the above section.
+**LeagueIndex** is was covered thoroughly in the above section. The following are the icon's earned for players who achieve related rank by the end of a given season. The legends for the following plots are styled to match.
 
 \center !['@SC2IIWCSGlobal'](./inline/StarCraft-II-Leagues.png) \center
 
@@ -92,28 +92,16 @@ print(paste('There are ',count_missing_age,' missing values in the age column. T
 
 The missing values are related exclusive to players with LeagueIndex equivalent to Professional Players (8). Where the `r count_professional` players with LeagueIndex=8 the age data is NA and the HoursPerWeek are 0. LeagueIndexes 1-7 are obtainable natural game play, to be a professional you would have to be part of a team. I am aiming to understand how players go from being average to good, less so elite to best.The 55 values associated with professionals will be dropped to resolve both issues.
 
-[Question for Colin]: Furthermore while Bronze through Master leagues (LeagueIndex's 1-6) may contain any number of players, Grand Master (LeagueIndex=7) may only contain 200 players. To only analyze portions of the data that are "more normal" the `r count_grandmaster` players LeagueIndex==7 data will be dropped.
+[Question for Colin]: Furthermore while Bronze through Master leagues (**LeagueIndex**'s 1-6) may contain any number of players, Grand Master (**LeagueIndex**=7) may only contain 200 players. To only analyze portions of the data that are "more normal" the `r count_grandmaster` players **LeagueIndex**==7 data will be dropped.
 
-The following will call the columns that are problematic for the analysis. 
-```{r showingnullvalues,echo=FALSE}
-#sc_describe<-describe(sc)
-#print('Age Values')
-#sc_describe[["Age"]][["counts"]][2]
-
-#print('LeagueIndex Values')
-#sc_describe[["LeagueIndex"]][["counts"]][2]
-
-#print('Hours Per Week Lower Extreme Values')
-#sc_describe[["HoursPerWeek"]][["extremes"]][0]
-```
-In addition to the missing values we have a clear error with the total hours of one player. $GameID = 5140$ has 1,000,000 total hours that equates to 114 years of game time. If we assumed one extra 0 was added the player would still have 14 years of played time on a game that is only 10 years old as of a 2020. Removing two 0s equates to 1.4 years of played time which is much more realistic. Removing 3 zeros results in `r .14*365` days of played time and that seems just as realistic. There is not a clear path to extrapolate this player's true total hours so their data will be dropped from the analysis. This was originally detected during modeling, but brought earlier into that analysis because how obviously unintentional this value is.
+In addition to the missing values we have a clear error with the **TotalHours** of one player. $GameID = 5140$ has 1,000,000 **TotalHours** that equates to 114 years of game time. If we assumed one extra 0 was added the player would still have 14 years of played time on a game that is only 10 years old as of a 2020. Removing two 0s equates to 1.4 years of played time which is much more realistic. Removing 3 zeros results in `r .14*365` days of played time and that seems just as realistic. There is not a clear path to extrapolate this player's true total hours so their data will be dropped from the analysis. This was originally detected during modeling, but brought earlier into that analysis because how obviously unintentional this value is.
 
 ```{r,echo=FALSE}
 sc<-filter(sc,sc$TotalHours<1000000)
 ```
-Finally, preforming basic a inspection on hoursperweek a max value of 168 was discovered. Considering there are 168 hours in a week its not plausible for a individual player to do this. There could be multiple players using this account making this possible. Another prospect is that this player is actually an AI like google's DeepMind [https://deepmind.com/blog/article/alphastar-mastering-real-time-strategy-game-starcraft-ii]. Either way this observation will be kept because what is realistic cutoff for the hours per week is not apparent and after removing the observation the next max value is 140 which seems almost as unrealistic.
+Finally, preforming basic a inspection on **HoursPerWeek** a max value of 168 was discovered. Considering there are 168 hours in a week its not plausible for a individual player to do this. There could be multiple players using this account making this possible. Another prospect is that this player is actually an AI like google's DeepMind [https://deepmind.com/blog/article/alphastar-mastering-real-time-strategy-game-starcraft-ii]. Either way this observation will be kept because what is realistic cutoff for the hours per week is not apparent and after removing the observation the next max value is 140 which seems almost as unrealistic.
 
-Its worth noting that dropping any amount of high hour outliers far from combats all the issues encouterable through HoursPerWeek and or TotalHours. Multiple players could be using any of the accounts even if the hour are not high. More likely then that many of these accounts could be smurf accounts. Smurfing is when a player makes a additional accounts to have a match making rating reset [https://www.lol-smurfs.com/blog/what-is-a-smurf-account/]. A common reason for doing this is to dominate the competition until their rating adapts to their skill level.
+Its worth noting that dropping any amount of high hour outliers far from combats all the issues encountered through the use of **HoursPerWeek** and or **TotalHours**. Multiple players could be using any of the accounts even if the hour are not high. More likely then that many of these accounts could be smurf accounts. Smurfing is when a player makes a additional accounts to have a match making rating reset [https://www.lol-smurfs.com/blog/what-is-a-smurf-account/]. A common reason for doing this is to dominate the competition until their rating adapts to their skill level.
 
 ```{r finalclean, include=FALSE ,echo=FALSE}
 sc<-sc%>%
@@ -160,16 +148,16 @@ sc<-sc%>%
 
 ### Correlation Plot
 
-Visually we can see that LeagueIndex has a relatively strong correlation with APM, SelectByHotkeys, AssignToHotkeys, NumberofPACs, GapBetweenPACs, and Action Latency. Some of these predictors may be the best choices for model, although its worth noting at this point many of the predictor values also have fairly strong correlations within themselves which may cause multiplecolinearity in a model. This is not too surprising because many of these metrics capture rate of actions in slightly difference forms. For example APM and NumberOfPacs likely have a strict mathematical relationship where approximately $NumberOfPACs=APM*MatchDurationMinutes$. The slight differences between these metrics them could have some deep explanatory power but that level of explore ration is beyond the scope of this analysis.
+Visually we can see that LeagueIndex has a relatively strong correlation with **APM, SelectByHotkeys, AssignToHotkeys, NumberofPACs, GapBetweenPACs, and Action Latency**. Some of these predictors may be the best choices for model, although its worth noting at this point many of the predictor values also have fairly strong correlations within themselves which may cause multiplecolinearity in a model. This is not too surprising because many of these metrics capture rate of actions in slightly difference forms. For example **APM** and **NumberOfPacs** likely have a strict mathematical relationship where approximately $NumberOfPACs=APM*MatchDurationMinutes$. The slight differences between these metrics them could have some deep explanatory power but that level of explore ration is beyond the scope of this analysis.
 
-The following columns will be dropped because plausible confoundance with APMs:
+The following columns will be dropped because plausible confoundance with **APMs**:
 - Remove Action Latency 
 - Remove GapBetweenPACs ^[Another issue with this is that its unist do not seem to align with the description. Before and after the unit transformation GapBetweenPACs results in periods that dont make since for the expected duration of SC2 matches.)]
 - Remove NumberofPACS
 - Remove SelectbyHotkey
 - Remove ActionsInPAC
 
-Focusing exclusively on APMs fit into an Occam's razor approach by minimizing the dimensionality of the models space.
+Focusing exclusively on **APM** fits into an Occam's razor approach by minimizing the dimensionality of the models space.
 
 ```{r echo=FALSE}
 sc_cor<-cor(select_if(sc,is.numeric),use = "complete.obs")
@@ -197,19 +185,20 @@ cor_hoursperweek<-paste(
 
 Visually determining trends between the predictors and the response with a response is that ordinal requires tossing aside scatter plots for a better suited tools. Violinplots will be used to gauge the linearity in relation to the response and distribution with variable at the varying levels https://chartio.com/learn/charts/violin-plot-complete-guide/. 
 
-MinimapAttacks, HoursPerweek, TotalHours, MinimapRightClicks, ComplexUnitsMade, ComplexAbilitiesUsed all have very long right tails. In search of gaussian predictors the listed variables are transformed using a square root transformation. The tail of some of predictors remainslong tail thus a log transformation would be preferable, but enough observations by GameID that contain at least 0 in the listed predictor values that the model would have to drop observation containing $-\infty$.
+**MinimapAttacks, HoursPerweek, TotalHours, MinimapRightClicks, ComplexUnitsMade, ComplexAbilitiesUsed** all have very long right tails. In search of gaussian predictors the listed variables are transformed using a square root transformation. The tail of some of predictors remainslong tail thus a log transformation would be preferable, but enough observations by GameID that contain at least 0 in the listed predictor values that the model would have to drop observation containing $-\infty$.
 
-**Age** the mean age of `r mean(sc$Age)` does not vary much across LeaguIndex such that there is no stark linear relationship. Although the variance at the highest level seems to be much narrower then that at the lower levels. 
+#### No Relationship
+**Age** the mean age of `r mean(sc$Age)` does not vary much across **LeaguIndex** such that there is no stark linear relationship. Although the variance at the highest level seems to be much narrower then that at the lower levels. 
 
-**HourPerWeek** The square root of HoursPerWeek has visibly little or no relation to LeagueIndex 1-4 where LeagueIndex 4-7 seems to have a strong linear trend resulting in `r cor_hoursperweek`. If HoursPerWeek survives the model trimming, it's bimodality may cause issues w model assumption $COV(Y)=\sigma^2I$.
+#### Bimodal
+**HourPerWeek** The square root of **HoursPerWeek** has visibly little or no relation to LeagueIndex 1-4 where LeagueIndex 4-7 seems to have a strong linear trend resulting in `r cor_hoursperweek`. If HoursPerWeek survives the model trimming, it's bimodality may cause issues w model assumption $COV(Y)=\sigma^2I$.**Workersmade,ComplexUnitsMades, and ComplexAbilityUsed** both have similar differences between LeagueIndex 1-4 and 4-7 with the portions that have no relation and a linear relation swapped in comparison to HoursPerWeek. 
 
-**TotalHours** The square root of HoursPerWeek positive linear trend with the response.
+#### Linear
 
-**APM** has a strong linear relationship with the response. 
+**TotalHours, MinimapRightClicks, TotalMapExplored, UniiqueUnitsMade** The square root of HoursPerWeek positive linear trend with the response. **APM** has a strong linear relationship with the response. 
 
-**AssignToHotkeys** Has a notable fractional relationship with the response. This also may cause issues with the Gaussianity of the error.
-
-**
+#### Fractional
+**AssignToHotkeys, UniqueHotkeys,and MinimapAttacks** The square root of these variablesa notable fractional relationship with the response. This also may cause issues with the Gaussianity of the model's residuals.
 
 ```{r colorvector, echo=FALSE}
 cbPalette <- c("#CC6600", "#999999", "#FFCC00", "#CCCFFF", "#CCFFFF","#0072B2", "#FF6600")
@@ -233,46 +222,28 @@ VioLeagueIndex<-function(predictor){
 plots<-lapply(colnames(sc)[2:length(colnames(sc))],VioLeagueIndex)
 
 do.call("grid.arrange", c(plots[1:4], ncol=2))
-do.call("grid.arrange", c(plots[5:9], ncol=2))
-do.call("grid.arrange", c(plots[10:13], ncol=2))
+do.call("grid.arrange", c(plots[5:8], ncol=2))
+do.call("grid.arrange", c(plots[9:13], ncol=2))
 ```
 
-  
 ### Gaussianity of the Response
 
-When using Shapiro-Wilk W test test on response LeagueIndex we find that we can reject the idea that the response come from a normally distributed population. Besides the obvious issues with performing a W test with an ordinal response, the the response has a heavy tail with a mean of `r round(mean(sc$LeagueIndex),2)`. Additionally we cannot assume the levels between LeagueIndexes are uniforming spaced. 
+When using Shapiro-Wilk W test on response **LeagueIndex** the null hypothesis that the sample  comes from normally distribution can be rejected. Besides the obvious issues with performing a W test with an ordinal response, the the response has a heavy tail with a mean of `r round(mean(sc$LeagueIndex),2)`. Additionally we cannot assume the levels between LeagueIndexes are uniforming spaced. 
 
 [Should I Include:] While the population distribution of ranking is difficult to come by, leagues like Grandmaster (LeagueIndex = 7 ) are capped at 200 which forcibly prevents LeagueIndex 1-7 from having a gaussian distribution.
 
-```{r,echo=FALSE, collapse=TRUE}
+```{r, echo=FALSE}
 LeagueIndex_Normal<-shapiro.test(sc$LeagueIndex)
+  ggplot(sc) +
+  geom_histogram(aes(x = LeagueIndex, y = (..count..)/sum(..count..),fill=LeagueIndex),
+                 position = "identity", binwidth = 1,fill=cbPalette) +
+  ylab("Relative Frequency")+
+  ggtitle('LeagueIndex Distribution',subtitle = paste(LeagueIndex_Normal[3]," P-Value: ",LeagueIndex_Normal[2]))+
+  xlab("LeagueIndex 1-Bronze to 7-Grandmaster")
 
-ggplot(sc, aes(LeagueIndex)) +
-  geom_histogram(bins=7)+
-  ggtitle(
-    'LeagueIndex Distribution',subtitle = paste(LeagueIndex_Normal[3],
-    " P-Value: ",LeagueIndex_Normal[2]))+
-  xlab("League Index (Bronze(1) to Grand Master(7)")+
-  ylab("Count")
-
-```
-
-```{r, include=FALSE}
-ggplot(sc, aes(LeagueIndex)) +
-  geom_density()+
-  ggtitle(
-    'LeagueIndex Distribution',subtitle = paste(LeagueIndex_Normal[3],
-    " P-Value: ",LeagueIndex_Normal[2]))+
-  xlab("League Index (Bronze(1) to Grand Master(7)")+
-  ylab("Count")
-#+theme_wsj(base_size = 7.5,color = "white")
-
-qqnorm(scale(sc$LeagueIndex))
 ```
 
 # Model Specifications
-
-## Model Assumptions at Risk
 
 ```{r exhaustivestepwise,echo=FALSE,collapse=TRUE}
 

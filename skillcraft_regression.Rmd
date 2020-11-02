@@ -9,7 +9,7 @@ bibliography: ./inline/bibliography.bib
 ```{bash git,eval=FALSE  , include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "Wrapping up vio explaination. Cleaning up headers. Changing histogram for response. Editting. Removing model residual plots"
+git commit -m "Confidence"
 git push
 ```
 ```{r setup, include=FALSE}

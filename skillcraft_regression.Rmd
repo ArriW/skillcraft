@@ -9,7 +9,7 @@ bibliography: ./inline/bibliography.bib
 ```{bash git,eval=FALSE  , include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "Confidence"
+git commit -m "More kable and tidy"
 git push
 ```
 ```{r setup, include=FALSE}
@@ -291,7 +291,7 @@ Before beginning diagnostic tests, a model with all predictors will be made. Sub
 
 The all inclusive model summary:
 ```{r, echo=FALSE,compact=FALSE}
-kable(tidy(sc_lm,conf.level = .05),digits = c(3,4,4,1),caption = "Summary of Starting Manual Stepwise Backward Model Selection$lm_\\Omega$")
+kable(tidy(sc_lm,conf.level = .05),digits = c(3,4,4,1),caption = "Summary of Starting Manual Stepwise Backward Model Selection $lm_\\Omega$")
 ```
 After 4 iterations the all predictors were significant. The final iteration provided:
 ```{r, echo=FALSE}
@@ -309,10 +309,15 @@ Our null model $H_o$ is there is no systematic structure to the response LeagueI
 
 ## Testing for Signifance Between Models
 
-If both models have normal residuals a F-test is used to determine if the the starting and final model's have significantly different residuals. The starting and ending models have Shapiro-Wilk's test results that reject the null at $\alpha=1\%$ shown in a later section that examines the normality, so these results will just by a exercise tossing aside that requirement. The $H_o$ specifically is that $RSS_{lm1}$ = $RSS_{lm4}$ and $H_a$ is that $RSS_{lm1}$ \neq $RSS_{lmfinal}$. Performing an ANOVA test we find that there is not significant difference in the models at $\alpha=5\%$ such that we cannot reject the $H_o$.(ANOVA see table below). Additionally their $adjR^2$ is barely different. $adjR^2$ starting at `r round(summary(sc_lm)[["adj.r.squared"]],2)` and ending at `r round(summary(sc_lm_final)[["adj.r.squared"]],2)`.
+If both models have normal residuals a F-test is used to determine if the the starting and final model's have significantly different residuals. The starting and ending models have Shapiro-Wilk's test results that reject the null at $\alpha=5\%$ shown in a later section that examines the normality of each models residuals. Without gaussian residuals conducting a ANOVA will be a practice exercise for the final where hypothesis are provided by:
+
+ \center$$ H_o:RSS_\omega = RSS_\Omega$$\center
+ \center$$ H_a:RSS_\omega \neq RSS_\Omega$$\center
+ 
+ Performing an ANOVA test we find that there is not significant difference in the models at $\alpha=5\%$ such that we cannot reject the $H_o$.(ANOVA see table below). Additionally their $adjR^2$ is barely different. $adjR^2$ starting at `r round(summary(sc_lm)[["adj.r.squared"]],4)` and ending at `r round(summary(sc_lm_final)[["adj.r.squared"]],4)`.
 
 ```{r,echo=FALSE, compact=TRUE}
-kable(anova(sc_lm,sc_lm_final))
+kable(anova(sc_lm,sc_lm_final),digits=2)
 ```
 Confidence Intervals Table^[Delta values are normalized by dividing by the mean of the model by related predictors confidence interval]
 ```{r,echo=FALSE}

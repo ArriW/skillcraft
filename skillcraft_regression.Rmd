@@ -23,8 +23,12 @@ library(gridExtra)# easy plot grids
 library(Hmisc) # for correlation matrix
 library(corrplot) # For correlation matrix graphic
 #library(SC2API) #starcraft 2 API
-library(broom) #grabbing p-value
+library(broom) #tidy lm summaries
+library(knitr) #pretty tables
 #library(GGally)  ggpairs
+
+#library(knitr)#Side by side table
+#library(kableExtra)#Side by side table
 ```
 ```{r settoken, include=FALSE}
 #set_token("33be678eb46d4f51ac36f72218abcdd2", #"Sb3QWR8A9mN9s0XgAt5w4j0FttY84pkg")
@@ -76,7 +80,7 @@ The appendix covers each in depth but the following are highlighted as a preface
 cbPalette <- c("#CC6600", "#999999", "#FFCC00", "#CCCFFF", "#CCFFFF","#0072B2", "#FF6600")
 ```
 
-**Actions Per Minute (APMs)** - APMs apply to variety of games but are common metric for analyzing proficiency of players at RTS games, its theorized skills like this provide a great advantage to players@APMDefiniton. Action quickness alone do not capture strategy and macro/micro skills so these additional predictors may add some unique color to the explanatory analysis.
+**Actions Per Minute (APMs)** - APMs apply to variety of games but are common metric for analyzing proficiency of players at RTS games, its theorized skills like this provide a great advantage to players @APMDefiniton. Action quickness alone does not capture the strategy or macro/micro skills so these additional predictors may add some unique color in hopes of further explaining what makes players skilled.
 
 **Perception Action Cycles (PACs)** - are the circular flow of information between an organism and its environment where a sensor-guided sequence of behaviors are iteratively followed towards a goal @Perception. In this data-set PACs are aggregate of screen movements where PAC is a screen fixation of containing at least one action @UCI.
 
@@ -94,7 +98,7 @@ count_grandmaster<-count(sc%>%filter(LeagueIndex==8))
 print(paste('There are ',count_missing_age,' missing values in the age column. There are ',count_professional,' professional #players.'))
 ```
 
-The missing values are related exclusive to players with LeagueIndex equivalent to Professional Players (8). Where the `r count_professional` players with LeagueIndex=8 the age data is NA and the HoursPerWeek are 0. LeagueIndexes 1-7 are obtainable natural game play, to be a professional you would have to be part of a team. The study is aiming to understand how players go from being average to good, less so elite to best.The 55 values associated with professionals will be dropped to resolve both issues.
+The missing values are related exclusive to players with LeagueIndex equivalent to Professional Players (8). Where the `r count_professional` players with LeagueIndex==8 the age data is NA and the HoursPerWeek are 0. LeagueIndexes 1-7 are obtainable natural game play, to be a professional you would have to be part of a team. The study is aiming to understand how players go from being average to good, less so elite to best.The 55 values associated with professionals will be dropped to resolve both issues.
 
 Another issue with **LeagueIndex** is that **LeagueIndex** 1-6 may contain any number of players, while **LeagueIndex** 7-Grandmaster may only contain some set range of players targeted at 1000 total per region @Leagues2019. Dropping **LeagueIndex** 7 would be a step towards normality.Considering this multivariate non-polylogistical model is already hampered by its selected application, **LeagueIndex**==7 will be kept to preserve a potential insight into the true population of Starcraft II players. 
 
@@ -165,9 +169,9 @@ ggplot(sc)+
 
 ### Correlation Plot
 
-Visually we can see that LeagueIndex has a relatively strong correlation with **APM, SelectByHotkeys, AssignToHotkeys, NumberofPACs, GapBetweenPACs, and Action Latency**. Some of these predictors may be the best choices for model, although its worth noting at this point many of the predictor values also have fairly strong correlations within themselves which may cause multiplecolinearity in a model. This is not too surprising because many of these metrics capture rate of actions in slightly difference forms. For example **APM** and **NumberOfPacs** likely have a strict mathematical relationship where approximately $NumberOfPACs=APM*MatchDurationMinutes$. The slight differences between these metrics them could have some deep explanatory power but that level of explore ration is beyond the scope of this analysis.
+Visually we can see that LeagueIndex has a relatively strong correlation with **APM, SelectByHotkeys, AssignToHotkeys, NumberofPACs, GapBetweenPACs, and Action Latency**. Some of these predictors may be the best choices for model, although its worth noting at this point many of the predictor values also have fairly strong correlations within themselves which may cause multiplecolinearity in a model. This is not too surprising because many of these metrics capture rate of actions in slightly difference forms. For example **APM** and **NumberOfPacs** likely have a strict mathematical relationship where approximately. $$NumberOfPACs \approx APM*MatchDurationMinutes$$ The slight differences between these metrics them could have some deep explanatory power but that level of explore ration is beyond the scope of this analysis.
 
-The following columns will be dropped because plausible confoundance with **APMs:ActionLatencyGapBetweenPACs** ^[An additional issues with this predictor is that it does not seem to line up with the time units in the description. Before and after the unit transformation GapBetweenPACs results in a mean is `r round(mean(sc$GapBetweenPACs))/60^2` hours.)]**, NumberofPACS, SelectbyHotkey, and ActionsInPAC.**
+The following columns will be dropped because plausible confoundance with **APMs, ActionLatency, GapBetweenPACs** ^[An additional issues with this predictor is that it does not seem to line up with the time units in the description. Before and after the unit transformation **GapBetweenPACs** results in a mean is `r round(mean(sc$GapBetweenPACs))/60^2` hours.)]**, NumberofPACS, SelectbyHotkey, and ActionsInPAC.**
 
 Focusing exclusively on **APM** fits into an Occam's razor approach by minimizing $span(X)$.
 
@@ -197,26 +201,28 @@ cor_hoursperweek<-paste(
 
 Visually determining trends between the predictors and the response with a ordinal response is is best done with alternatives to scatter plots. Violinplots will be used to gauge the linearity in relation to the response and distribution with variable at the varying levels @ViolinPlots. 
 
-**MinimapAttacks, HoursPerweek, TotalHours, MinimapRightClicks, ComplexUnitsMade, ComplexAbilitiesUsed** all have very long right tails. In search of gaussian predictors the listed variables are transformed using a square root transformation. The tail of some of predictors remains.long tail thus a log transformation would be preferable, but enough observations by GameID that contain at least 0 in the listed predictor values that the model would have to drop observation containing $-\infty$.
+**MinimapAttacks, HoursPerweek, TotalHours, MinimapRightClicks, ComplexUnitsMade, ComplexAbilitiesUsed** all have very long right tails. In search of gaussian predictors the listed variables were considered transformations, but this would have affect the affected the simplicity of the explanation.^[A log transformation would be preferable, but enough observations by GameID that contain at least 0 in the related predictor entry a  would have to drop observation containing $-\infty$. If a transformation is persued for the second-half of this analysis it will likely be a square root transformation]
 
 #### No Relationship
 **Age** the mean age of `r mean(sc$Age)` does not vary much across **LeaguIndex** such that there is no stark linear relationship. Although the variance at the highest level seems to be much narrower then that at the lower levels. 
 
 #### Bimodal
-**HourPerWeek** The square root of **HoursPerWeek** has visibly little or no relation to LeagueIndex 1-4 where LeagueIndex 4-7 seems to have a strong linear trend resulting in `r cor_hoursperweek`. If HoursPerWeek survives the model trimming, it's bimodality may cause issues with the model's assumption $COV(Y)=\sigma^2I$.**Workersmade,ComplexUnitsMades, and ComplexAbilityUsed** both have similar differences between LeagueIndex 1-4 and 4-7 with the portions that have no relation and a linear relation swapped in comparison to HoursPerWeek. 
+**HourPerWeek** has visibly little or no relation to LeagueIndex 1-4 where LeagueIndex 4-7 seems to have a visible linear trend resulting in `r cor_hoursperweek`. If HoursPerWeek survives the model trimming, it's bimodality may cause issues with the model's assumption $COV(Y)=\sigma^2I$.**Workersmade,ComplexUnitsMades, and ComplexAbilityUsed** both have similar differences between LeagueIndex 1-4 and 4-7 with the portions that have no relation and a linear relation swapped in comparison to HoursPerWeek. 
 
 #### Linear
 
-**TotalHours, MinimapRightClicks, TotalMapExplored, UniiqueUnitsMade** The square root of HoursPerWeek positive linear trend with the response. **APM** has a strong linear relationship with the response. 
+**TotalHours, MinimapRightClicks, TotalMapExplored, and UniiqueUnitsMade** have a positive linear trend with the response. **APM** has a strong linear relationship with the response. 
 
-#### Fractional
-**AssignToHotkeys, UniqueHotkeys,and MinimapAttacks** The square root of these variables have a notable fractional relationship with the response. This also may cause issues with the Gaussianity of the model's residuals.
+#### Root
+**AssignToHotkeys, UniqueHotkeys, and MinimapAttacks** have a notable square root relationship with the response. This also may cause issues with the Gaussianity of the model's residuals.
 
 ```{r transform, echo=FALSE}
-sc[,c("MinimapAttacks", "HoursPerWeek","TotalHours","MinimapRightClicks"
-      ,"ComplexUnitsMade","ComplexAbilitiesUsed")]<-sqrt(sc[,c("MinimapAttacks", "HoursPerWeek","TotalHours","MinimapRightClicks"
-      ,"ComplexUnitsMade","ComplexAbilitiesUsed")])
+#sc[,c("MinimapAttacks", "HoursPerWeek","TotalHours","MinimapRightClicks"
+#      ,"ComplexUnitsMade","ComplexAbilitiesUsed")]<-sqrt(sc[,c("MinimapAttacks", "HoursPerWeek","TotalHours","MinimapRightClicks"
+#      ,"ComplexUnitsMade","ComplexAbilitiesUsed")])
 ```
+
+
 
 ```{r,echo=FALSE,error=FALSE, compact=TRUE}
 VioLeagueIndex<-function(predictor){
@@ -233,9 +239,6 @@ do.call("grid.arrange", c(plots[1:4], ncol=2))
 do.call("grid.arrange", c(plots[5:8], ncol=2))
 do.call("grid.arrange", c(plots[9:13], ncol=2))
 ```
-
-
-
 # Model Specifications
 
 ```{r exhaustivestepwise,echo=FALSE,collapse=TRUE}
@@ -263,7 +266,6 @@ do.call("grid.arrange", c(plots[9:13], ncol=2))
 
 ## Manual Regression Iterations
 
-I dropped age for as a insignificant predictor, that may mean its not too late for me!
 ```{r,echo=FALSE}
 sc_lm<-lm(LeagueIndex~.,sc)
 sc_lm_1<-update(sc_lm,.~.-UniqueUnitsMade ,sc)
@@ -275,23 +277,29 @@ sc_lm_final<-update(sc_lm,.~.-Age-TotalMapExplored-UniqueUnitsMade-MinimapRightC
 #anova(sc_lm_1)$'Pr(>F)'
 ```
 
-*5 Justify your choices using hypothesis testing and confidence intervals for selection of parameters. You should compare multiple model choices in describing this relationship, including the null model. *
+```{r,echo=FALSE}
+sc_lm<-lm(LeagueIndex~.,sc)
+sc_lm_1<-update(sc_lm,.~.-UniqueUnitsMade ,sc)
+sc_lm_2<-update(sc_lm,.~.-Age-UniqueUnitsMade)
+sc_lm_3<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade)
+sc_lm_4<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade-MinimapRightClicks)
+sc_lm_final<-update(sc_lm,.~.-Age-TotalMapExplored-UniqueUnitsMade-MinimapRightClicks-ComplexUnitsMade)
 
-*6 Evaluate the goodness of fit of the model in terms of R2 and the standard errors, and the major sources of uncertainty. This includes parameter uncertainty, as well as structural uncertainty in the model. *
+```
 
-Before beginning diagnostic tests, a model with all predictors will be made. Subsequently predictors will be dropped one by one until only predictors with significance of at least $\alpha=5\%$ remain. The results are as follows:
+Before beginning diagnostic tests, a model with all predictors will be made. Subsequently predictors will be dropped one by one until only predictors with significance of at least $\alpha=5\%$ remain starting with $lm_\Omega$ and end with $lm_\omega$. The results are as follows:
 
 The all inclusive model summary:
 ```{r, echo=FALSE,compact=FALSE}
-summary(sc_lm)
+kable(tidy(sc_lm,conf.level = .05),digits = c(3,4,4,1),caption = "Summary of Starting Manual Stepwise Backward Model Selection$lm_\\Omega$")
 ```
 After 4 iterations the all predictors were significant. The final iteration provided:
 ```{r, echo=FALSE}
-summary(sc_lm_final)
+kable(tidy(sc_lm_final,conf.level = .05),digits = c(3,4,4,1),caption = "Summary of Final Manual Stepwise Backward Model Selection$lm_\\omega$")
 ```
 ### Assessing Fit and Overall Significance
 
-Our null model $H_o$ is there is no systematic structure to the response LeagueIndex. Our alternative $H_a$ is there is some relation such that $LeagueIndex=X\beta+\epsilon$, where X all other variables with the exception of index GameID. Without much surprise using 18 predictor variables results of a very small p-value of ~`r glance(sc_lm)$p.value `. Over the iteration this does not change in a notable fashion across the 9 other models as the last model also results in a p-value`r glance(sc_lm_4)$p.value`. Thus all iterations of the model we can reject the null hypothesis suggesting that we should further investigate the explanatory power of our alternative hypothesis. 
+Our null model $H_o$ is there is no systematic structure to the response LeagueIndex. Our alternative $H_a$ is there is some relation such that $LeagueIndex=X\beta+\epsilon$, where X all other variables with the exception of index GameID. Without much surprise using `r length(colnames(sc))-1` predictor variables results of a very small p-value of ~`r glance(sc_lm)$p.value `. Over the iteration this does not change in a notable fashion across the 9 other models as the last model also results in a p-value`r glance(sc_lm_4)$p.value`. Thus all iterations of the model we can reject the null hypothesis suggesting that we should further investigate the explanatory power of our alternative hypothesis. 
 
 ```{r, include=FALSE, compact=TRUE}
 ### Noramlity of Residuals Both Models
@@ -304,33 +312,30 @@ Our null model $H_o$ is there is no systematic structure to the response LeagueI
 If both models have normal residuals a F-test is used to determine if the the starting and final model's have significantly different residuals. The starting and ending models have Shapiro-Wilk's test results that reject the null at $\alpha=1\%$ shown in a later section that examines the normality, so these results will just by a exercise tossing aside that requirement. The $H_o$ specifically is that $RSS_{lm1}$ = $RSS_{lm4}$ and $H_a$ is that $RSS_{lm1}$ \neq $RSS_{lmfinal}$. Performing an ANOVA test we find that there is not significant difference in the models at $\alpha=5\%$ such that we cannot reject the $H_o$.(ANOVA see table below). Additionally their $adjR^2$ is barely different. $adjR^2$ starting at `r round(summary(sc_lm)[["adj.r.squared"]],2)` and ending at `r round(summary(sc_lm_final)[["adj.r.squared"]],2)`.
 
 ```{r,echo=FALSE, compact=TRUE}
-anova(sc_lm,sc_lm_final)
+kable(anova(sc_lm,sc_lm_final))
 ```
-
-
-```{r}
-library(knitr)
-library(kableExtra)
+Confidence Intervals Table^[Delta values are normalized by dividing by the mean of the model by related predictors confidence interval]
+```{r,echo=FALSE}
+#t<-data.frame(confint(sc_lm),confint(sc_lm_final))
 t1 <- data.frame(confint(sc_lm))
 t2 <- data.frame(confint(sc_lm_final))
-kable(list(t1, t2))
-```
-
-## with float
-```{r, echo = FALSE}
-kable(t1) %>%
-  kable_styling(full_width = FALSE, position = "float_left")
-kable(t2) %>%
-  kable_styling(full_width = FALSE, position = "left")
-```
-
+t3<-merge(t1,t2,by="row.names",all=TRUE)
+t3<-t3%>%rename(LL_s=X2.5...x,UL_s=X97.5...x,LL_f=X2.5...y,UL_f=X97.5...y)
+t3<-t3%>%mutate(mean_s=(UL_s+LL_s)/2,
+                mean_f=(UL_f+LL_f)/2,
+                delta=(mean_f-mean_s)/mean_f,
+                delta_width=((UL_f-LL_f)-(UL_s-LL_s))/mean_f)%>%
+         mutate_if(is.numeric, ~round(., 3))
+kable(t3,format = "markdown", digits = c(4,4,4,4,4,4,4,2,2), caption="Confidence Intervals Statistics at $\\alpha$ 0.05" )
 ```
 
 ### Exploring the chosen model
 
 Evaluate the goodness of fit of the model in terms of R2 and the standard errors, and the major sources of uncertainty. This includes parameter uncertainty, as well as structural uncertainty in the model. 
-```{r, compact=TRUE,collapse=TRUE}
-summary(sc_lm_4)
+
+```{r, compact=TRUE,collapse=TRUE,echo=FALSE}
+
+#summary(sc_lm_4)
 #plot(sc_lm_4)
 ```
 ### Model Analysis Reform (Trim and then confound)
@@ -348,7 +353,6 @@ Evaluate the predictive power of the model – particularly, how effective does 
 For the final, the logistical regression will remodel the same problem with a different set of techniques and assumptions that fit the ordinal response.
 
 The goal is for the analysis pull in additional regression techniques while still integrating the previous exploratory exercises.
-
 
 ```{r, eval=FALSE,include=FALSE,include = FALSE}
 data <-get_league_data(season_id = 43, 
@@ -368,7 +372,6 @@ counter<-0
   }
   }
 #ladder_data <- get_ladder_data(ladder_id = ladder_id, host_region = "eu")
-
 ```
 
 # Appendix
@@ -396,5 +399,25 @@ Attribute Information:
 18. UniqueUnitsMade: Unique unites made per timestamp (continuous)
 19. ComplexUnitsMade: Number of ghosts, infestors, and high templars trained per timestamp (continuous)
 20. ComplexAbilitiesUsed: Abilities requiring specific targeting instructions used per timestamp (continuous)
+
+### Why Violin Plots.
+
+I decided to use Violin plots because I found with less tweaking they provided almost all the information I was looking for compared to scatter plots. Head to head a limitation of violin plots is that make it seems as though the LeagueIndex level size contains the same $n$. The histogram earlier in this analysis shows clearly that $n$ at each level of the **LeagueIndex** is not equal so choosing a tool on the basis of reiterating that point seems redundant. The benefit of Violin plots is that they provide a smoothed density plot at each **LeagueIndex** with a single point that represents the mean. This same thing could be done with scatter plots but I found it took much more staring and plot to plot variation.
+
+The following is some head to head varieties plotting the data.
+```{r, echo=FALSE}
+p1<-ggplot(sc,aes(x=APM,y=LeagueIndex))+ geom_point( alpha = 0.1, size = 3)+scale_fill_manual(values=cbPalette)
+p2<-ggplot(sc,aes(x=APM,y=LeagueIndex, fill=factor(LeagueIndex)))+ geom_jitter(shape=21, alpha = 0.1, size = 3)+scale_fill_manual(values=cbPalette)
+p3<-ggplot(sc,aes(x=APM,y=LeagueIndex))+ geom_jitter(alpha = 0.1, size = 3)
+p4<-VioLeagueIndex("APM")
+
+grid.arrange(p1,p2,p3,p4,ncol=2)
+p1<-ggplot(sc,aes(x=Age,y=LeagueIndex))+ geom_point( alpha = 0.1, size = 3)+scale_fill_manual(values=cbPalette)
+p2<-ggplot(sc,aes(x=Age,y=LeagueIndex, fill=factor(LeagueIndex)))+ geom_jitter(shape=21, alpha = 0.1, size = 3)+scale_fill_manual(values=cbPalette)
+p3<-ggplot(sc,aes(x=Age,y=LeagueIndex))+ geom_jitter(alpha = 0.1, size = 3)
+p4<-VioLeagueIndex("Age")
+
+grid.arrange(p1,p2,p3,p4,ncol=2)
+```
 
 # References

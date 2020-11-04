@@ -7,13 +7,13 @@ output:
   word_document: default
 bibliography: ./inline/bibliography.bib
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 ```{bash git, eval=FALSE, include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "Editting"
+git commit -m "strucutral integrity"
 git push
 ```
 
@@ -331,11 +331,15 @@ Performing an ANOVA test we find that there is not significant difference in the
 kable(anova(sc_lm,sc_lm_final),digits=2)
 ```
 
-The confidence Intervals Table^[Delta values are normalized by dividing by the mean of the model by related predictors confidence interval] show only a few subtleties between models coefficients confidence intervals. For comparison two summary statistics were added as follows:
+The confidence Intervals Table^[Delta values are normalized by dividing by the mean of the model by related predictors confidence interval] show only a few subtleties between models coefficients confidence intervals. 
 
+In the starting model **Age, MinimapRightClicks, UniqueUnitsMade, ComplexUnitsMade, and ComplexAbilitiesUsed** are all not signficiant based on their p value and their confidence intervals straddle 0. Interesting enough **ComplexAbilitiesUsed** was initally above the alpha value for signficance but made it to the final model. This is the magnitude of this shift is reflect in its delta value and delta_width [Does this mean that something was confounding]. 
+
+For comparison two summary statistics were added as follows:
+
+*Where:*
 $$delta=\frac{(UL_\omega+LL_\omega)-(UL_\Omega+LL_\Omega)}{(UL_\omega+LL_\omega)}=\frac{MeanCI_\omega-MeanCI_\Omega}{MeanCI_\omega}$$
 $$delta_{width}=\frac{(UL_\omega-LL_\omega)-(UL_\Omega-LL_\Omega)}{(UL_\omega-LL_\omega)}$$
-The OMEGA model includes many 0 values. Amongst delta the most interesting difference notable difference 
 ```{r,echo=FALSE}
 #t<-data.frame(confint(sc_lm),confint(sc_lm_final))
 t1 <- data.frame(confint(sc_lm))
@@ -350,15 +354,7 @@ t3<-t3%>%mutate(mean_s=(UL_s+LL_s)/2,
 kable(t3,format = "markdown", digits = c(4,4,4,4,4,4,4,2,2), caption="Confidence Intervals Statistics at $\\alpha$ 0.05" )
 ```
 
-### Exploring the chosen model
-
-Evaluate the goodness of fit of the model in terms of R2 and the standard errors, and the major sources of uncertainty. This includes parameter uncertainty, as well as structural uncertainty in the model. 
-
-```{r, compact=TRUE,collapse=TRUE,echo=FALSE}
-#summary(sc_lm_4)
-#plot(sc_lm_4)
-```
-### Model Analysis Reform (Trim and then confound)
+### Confounding
 
 Describe your model, how you arrived at it, its goodness of fit, its significance versus other choices of models, and its uncertainty. Describe the predictive power, and the uncertainty. Include relevant tables and figures.
 
@@ -373,6 +369,21 @@ sc_omega_cor_plot<-corrplot(sc_omega_cor,
     tl.cex=.75,
     tl.col='black',
     method="number")
+```
+
+
+### Structural Uncertainty in the Model
+
+Without using cross validation we can see some basic issues with the fitter values of the model. Inttially we can start with one one of more dominate predictors APM and see that based some players are excepted to have a LeagueIndex>>10 which simply doesnt exist. Another part of the models bias is that it does not place anyone below **LeagueIndex=** `r min(round(fitted(sc_lm)))`
+```{r, compact=TRUE,collapse=TRUE,echo=FALSE}
+ggplot(sc_lm, aes(x=APM, y=factor(LeagueIndex),color='blue'))+geom_point() +geom_point(aes(y=fitted(sc_lm),color='red')) +ggtitle("Fitted Values and Sample by \nAPM")+theme_classic()
+
+#qqnorm(fitted(sc_lm))
+#qqline(fitted(sc_lm))
+#qqnorm(fitted(sc_lm_final))
+#qqline(fitted(sc_lm_final))
+#summary(sc_final)
+#plot(sc_lm_final)
 ```
 
 ## Predict

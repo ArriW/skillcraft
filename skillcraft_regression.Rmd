@@ -333,7 +333,9 @@ kable(anova(sc_lm,sc_lm_final),digits=2)
 
 The confidence Intervals Table^[Delta values are normalized by dividing by the mean of the model by related predictors confidence interval] show only a few subtleties between models coefficients confidence intervals. 
 
-In the starting model **Age, MinimapRightClicks, UniqueUnitsMade, ComplexUnitsMade, and ComplexAbilitiesUsed** are all not signficiant based on their p value and their confidence intervals straddle 0. Interesting enough **ComplexAbilitiesUsed** was initally above the alpha value for signficance but made it to the final model. This is the magnitude of this shift is reflect in its delta value and delta_width [Does this mean that something was confounding]. 
+In the starting model **Age, MinimapRightClicks, UniqueUnitsMade, ComplexUnitsMade, and ComplexAbilitiesUsed** are all not signficiant based on their p value and their confidence intervals straddle 0. Interesting enough **ComplexAbilitiesUsed** was initally above the alpha value for signficance but made it to the final model. The magnitude of this shift is reflected in its delta value and delta_width.
+
+high that a confounding variavle may have been removed. Revisiting correlation plot generated previousl
 
 For comparison two summary statistics were added as follows:
 

@@ -2,14 +2,16 @@
 title: "SkillCraft Multivariant Regression"
 author: "Arrington Walters"
 date: "10/7/2020"
-output: html_document
+output:
+  html_document: default
+  word_document: default
 bibliography: ./inline/bibliography.bib
 ---
 
 ```{bash git,eval=FALSE  , include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "More kable and tidy"
+git commit -m "Editting"
 git push
 ```
 ```{r setup, include=FALSE}
@@ -153,7 +155,7 @@ sc<-sc%>%
 ```
 ### Gaussianity of the Response
 
-When using Shapiro-Wilk W test on response **LeagueIndex** the null hypothesis that the samplecomes from normally distribution can be rejected. Besides the obvious issues with performing a W test with an ordinal response, the response has a heavy tail with a mean of `r round(mean(sc$LeagueIndex),2)`. Additionally we cannot assume the levels between LeagueIndexes are uniforming spaced. As previously mentioned **LeagueIndex** like Grandmaster are capped typically prevents LeagueIndex 1-7 from having a gaussian distribution.
+When using Shapiro-Wilk W test on response **LeagueIndex** the null hypothesis that the sample comes from normally distribution can be rejected. Besides the obvious issues with performing a W test with an ordinal response, the response has a negative skew with a mean of `r round(mean(sc$LeagueIndex),2)`. Additionally we cannot assume the levels between LeagueIndexes are uniforming spaced. As previously mentioned **LeagueIndex** like Grandmaster are capped forcibly prevents **LeagueIndex** from having a gaussian distribution.
 
 ```{r, echo=FALSE}
 LeagueIndex_Normal<-shapiro.test(sc$LeagueIndex)
@@ -163,7 +165,7 @@ ggplot(sc)+
       position = "identity", binwidth = 1,fill=cbPalette) +
   ylab("Relative Frequency")+
   ggtitle('LeagueIndex Distribution',subtitle = paste(LeagueIndex_Normal[3],
-      " P-Value: ",LeagueIndex_Normal[2]))+xlab("LeagueIndex 1-Bronze to 7-Grandmaster")
+      " P-Value: ",LeagueIndex_Normal[2]))+xlab("LeagueIndex 1-Bronze to 7-Grandmaster")+theme_classic()
 
 ```
 
@@ -230,7 +232,7 @@ VioLeagueIndex<-function(predictor){
     geom_violin(trim=FALSE, color="black")+scale_fill_manual(values=cbPalette)+
     stat_summary(fun.data=mean_sdl,geom="pointrange", color="black")+ coord_flip()+
     ggtitle(paste("LeagueIndex by",predictor))+
-    xlab("LeagueIndex")+ylab(predictor) + guides(fill= FALSE)
+    xlab("LeagueIndex")+ylab(predictor) + guides(fill= FALSE)+theme_classic()
     }
 
 plots<-lapply(colnames(sc)[2:length(colnames(sc))],VioLeagueIndex)
@@ -239,6 +241,7 @@ do.call("grid.arrange", c(plots[1:4], ncol=2))
 do.call("grid.arrange", c(plots[5:8], ncol=2))
 do.call("grid.arrange", c(plots[9:13], ncol=2))
 ```
+
 # Model Specifications
 
 ```{r exhaustivestepwise,echo=FALSE,collapse=TRUE}
@@ -293,13 +296,13 @@ The all inclusive model summary:
 ```{r, echo=FALSE,compact=FALSE}
 kable(tidy(sc_lm,conf.level = .05),digits = c(3,4,4,1),caption = "Summary of Starting Manual Stepwise Backward Model Selection $lm_\\Omega$")
 ```
-After 4 iterations the all predictors were significant. The final iteration provided:
+**Age,UniqueUnitsMade,ComplexUnitsMade, MinimapRightClicks, and TotalMapExplored** were removed in that order across the 5 iterations of the model. All remaining predictors were significant to the predetermined $\alpha$. The final iteration provided:
 ```{r, echo=FALSE}
 kable(tidy(sc_lm_final,conf.level = .05),digits = c(3,4,4,1),caption = "Summary of Final Manual Stepwise Backward Model Selection$lm_\\omega$")
 ```
 ### Assessing Fit and Overall Significance
 
-Our null model $H_o$ is there is no systematic structure to the response LeagueIndex. Our alternative $H_a$ is there is some relation such that $LeagueIndex=X\beta+\epsilon$, where X all other variables with the exception of index GameID. Without much surprise using `r length(colnames(sc))-1` predictor variables results of a very small p-value of ~`r glance(sc_lm)$p.value `. Over the iteration this does not change in a notable fashion across the 9 other models as the last model also results in a p-value`r glance(sc_lm_4)$p.value`. Thus all iterations of the model we can reject the null hypothesis suggesting that we should further investigate the explanatory power of our alternative hypothesis. 
+Before proceeding with further analysis of the model, a statistical test will be performed to see if the predictors provide statistically significant better model than $Y=\overset{\_}{Y}+\epsilon$ where $Y=LeagueIndex$ .Thus the null model $H_o$ is there is no systematic structure to the response LeagueIndex given the predictors $X$ such that $\beta=0$. Our alternative $H_a$ is there is some relation such that $LeagueIndex=X\beta+\epsilon$, where X all other variables with the exception of index **GameID**. Without much surprise using `r length(colnames(sc))-1` predictor variables results of a very small p-value of ~`r glance(sc_lm)$p.value `. Over the iteration this does not change in a notable fashion across the 9 other models as the last model also results in a p-value`r glance(sc_lm_4)$p.value`. Thus all iterations of the model we can reject the null hypothesis suggesting that we should further investigate the explanatory power of our alternative hypothesis. 
 
 ```{r, include=FALSE, compact=TRUE}
 ### Noramlity of Residuals Both Models
@@ -309,17 +312,22 @@ Our null model $H_o$ is there is no systematic structure to the response LeagueI
 
 ## Testing for Signifance Between Models
 
-If both models have normal residuals a F-test is used to determine if the the starting and final model's have significantly different residuals. The starting and ending models have Shapiro-Wilk's test results that reject the null at $\alpha=5\%$ shown in a later section that examines the normality of each models residuals. Without gaussian residuals conducting a ANOVA will be a practice exercise for the final where hypothesis are provided by:
+If both models had normal residuals a F-test could be used on $lm_\Omega$ and $lm_\omega$ to determine if the model's have significantly different residuals. $RSS_\Omega$ and $RSS_\omega$ both have Shapiro-Wilk's test statistics that reject the null at $\alpha=5\%$ shown in a later section that examines the normality of each models' residuals. Without gaussian residuals conducting a ANOVA will be a only practice exercise for the final where hypothesis are provided by:
 
  \center$$ H_o:RSS_\omega = RSS_\Omega$$\center
  \center$$ H_a:RSS_\omega \neq RSS_\Omega$$\center
  
- Performing an ANOVA test we find that there is not significant difference in the models at $\alpha=5\%$ such that we cannot reject the $H_o$.(ANOVA see table below). Additionally their $adjR^2$ is barely different. $adjR^2$ starting at `r round(summary(sc_lm)[["adj.r.squared"]],4)` and ending at `r round(summary(sc_lm_final)[["adj.r.squared"]],4)`.
+Performing an ANOVA test we find that there is not significant difference in the models at $\alpha=5\%$ such that we cannot reject the $H_o$.(ANOVA see table below).The implications not rejecting $H_o$ is that regardless of trimming the predictor space by $p_\Omega-p_\omega$ predictors, $lm_\omega$ is expected to produce comparable residuals with a 5% chance this is a result of the sampling. Additionally their $adjR^2$ is barely different. Where  $adjR^2_\Omega=$ `r round(summary(sc_lm)[["adj.r.squared"]],4)` and $adjR^2_\omega=$ `r round(summary(sc_lm_final)[["adj.r.squared"]],4)`. Further analysis will be conducted to see if the predict and explanatory power of the models vary past the magnitude of their residuals.
 
 ```{r,echo=FALSE, compact=TRUE}
 kable(anova(sc_lm,sc_lm_final),digits=2)
 ```
-Confidence Intervals Table^[Delta values are normalized by dividing by the mean of the model by related predictors confidence interval]
+
+The confidence Intervals Table^[Delta values are normalized by dividing by the mean of the model by related predictors confidence interval] show only a few subtleties between models coefficients confidence intervals. For comparison two summary statistics were added as follows:
+
+$$delta=\frac{(UL_\omega+LL_\omega)-(UL_\Omega+LL_\Omega)}{(UL_\omega+LL_\omega)}=\frac{MeanCI_\omega-MeanCI_\Omega}{MeanCI_\omega}$$
+$$delta_{width}=\frac{(UL_\omega-LL_\omega)-(UL_\Omega-LL_\Omega)}{(UL_\omega-LL_\omega)}$$
+The OMEGA model includes many 0 values. Amongst delta the most interesting difference notable difference 
 ```{r,echo=FALSE}
 #t<-data.frame(confint(sc_lm),confint(sc_lm_final))
 t1 <- data.frame(confint(sc_lm))
@@ -329,7 +337,7 @@ t3<-t3%>%rename(LL_s=X2.5...x,UL_s=X97.5...x,LL_f=X2.5...y,UL_f=X97.5...y)
 t3<-t3%>%mutate(mean_s=(UL_s+LL_s)/2,
                 mean_f=(UL_f+LL_f)/2,
                 delta=(mean_f-mean_s)/mean_f,
-                delta_width=((UL_f-LL_f)-(UL_s-LL_s))/mean_f)%>%
+                delta_width=((UL_f-LL_f)-(UL_s-LL_s))/(UL_f-LL_f))%>%
          mutate_if(is.numeric, ~round(., 3))
 kable(t3,format = "markdown", digits = c(4,4,4,4,4,4,4,2,2), caption="Confidence Intervals Statistics at $\\alpha$ 0.05" )
 ```
@@ -339,7 +347,6 @@ kable(t3,format = "markdown", digits = c(4,4,4,4,4,4,4,2,2), caption="Confidence
 Evaluate the goodness of fit of the model in terms of R2 and the standard errors, and the major sources of uncertainty. This includes parameter uncertainty, as well as structural uncertainty in the model. 
 
 ```{r, compact=TRUE,collapse=TRUE,echo=FALSE}
-
 #summary(sc_lm_4)
 #plot(sc_lm_4)
 ```

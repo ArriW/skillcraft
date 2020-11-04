@@ -6,17 +6,21 @@ output:
   html_document: default
   word_document: default
 bibliography: ./inline/bibliography.bib
+editor_options: 
+  chunk_output_type: console
 ---
 
-```{bash git,eval=FALSE  , include=FALSE}
+```{bash git, eval=FALSE, include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
 git commit -m "Editting"
 git push
 ```
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
 ```{r loading_packages,include=FALSE}
 library(tidyverse)
 library(dbplyr) #piping
@@ -27,14 +31,12 @@ library(corrplot) # For correlation matrix graphic
 #library(SC2API) #starcraft 2 API
 library(broom) #tidy lm summaries
 library(knitr) #pretty tables
-#library(GGally)  ggpairs
-
-#library(knitr)#Side by side table
-#library(kableExtra)#Side by side table
 ```
+
 ```{r settoken, include=FALSE}
 #set_token("33be678eb46d4f51ac36f72218abcdd2", #"Sb3QWR8A9mN9s0XgAt5w4j0FttY84pkg")
 ```
+
 ```{r midterm2, include=FALSE}
 # Assignment Midterm 2
 
@@ -82,7 +84,7 @@ The appendix covers each in depth but the following are highlighted as a preface
 cbPalette <- c("#CC6600", "#999999", "#FFCC00", "#CCCFFF", "#CCFFFF","#0072B2", "#FF6600")
 ```
 
-**Actions Per Minute (APMs)** - APMs apply to variety of games but are common metric for analyzing proficiency of players at RTS games, its theorized skills like this provide a great advantage to players @APMDefiniton. Action quickness alone does not capture the strategy or macro/micro skills so these additional predictors may add some unique color in hopes of further explaining what makes players skilled.
+**Actions Per Minute (APMs)** - APMs apply to variety of games but are common metric for analyzing proficiency of players at RTS games, its theorized skills like this provide a great advantage to players @APMDefiniton . Action quickness alone does not capture the strategy or macro/micro skills so these additional predictors may add some unique color in hopes of further explaining what makes players skilled.
 
 **Perception Action Cycles (PACs)** - are the circular flow of information between an organism and its environment where a sensor-guided sequence of behaviors are iteratively followed towards a goal @Perception. In this data-set PACs are aggregate of screen movements where PAC is a screen fixation of containing at least one action @UCI.
 
@@ -183,7 +185,8 @@ sc_cor_plot<-corrplot(sc_cor,
     tl.cex=.75,
     tl.col='black')
 ```
-```{r droppredictorsandredocor, echo=FALSE}
+
+```{r dropconfounding, echo=FALSE}
 sc<-sc%>%select(!c(GameID,ActionLatency,GapBetweenPACs,NumberOfPACs,SelectByHotkeys,ActionsInPAC))
 ```
  
@@ -223,8 +226,6 @@ Visually determining trends between the predictors and the response with a ordin
 #      ,"ComplexUnitsMade","ComplexAbilitiesUsed")]<-sqrt(sc[,c("MinimapAttacks", "HoursPerWeek","TotalHours","MinimapRightClicks"
 #      ,"ComplexUnitsMade","ComplexAbilitiesUsed")])
 ```
-
-
 
 ```{r,echo=FALSE,error=FALSE, compact=TRUE}
 VioLeagueIndex<-function(predictor){
@@ -269,7 +270,7 @@ do.call("grid.arrange", c(plots[9:13], ncol=2))
 
 ## Manual Regression Iterations
 
-```{r,echo=FALSE}
+```{r modeltrimming,echo=FALSE}
 sc_lm<-lm(LeagueIndex~.,sc)
 sc_lm_1<-update(sc_lm,.~.-UniqueUnitsMade ,sc)
 sc_lm_2<-update(sc_lm,.~.-Age-UniqueUnitsMade)
@@ -280,6 +281,7 @@ sc_lm_final<-update(sc_lm,.~.-Age-TotalMapExplored-UniqueUnitsMade-MinimapRightC
 #anova(sc_lm_1)$'Pr(>F)'
 ```
 
+
 ```{r,echo=FALSE}
 sc_lm<-lm(LeagueIndex~.,sc)
 sc_lm_1<-update(sc_lm,.~.-UniqueUnitsMade ,sc)
@@ -287,22 +289,28 @@ sc_lm_2<-update(sc_lm,.~.-Age-UniqueUnitsMade)
 sc_lm_3<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade)
 sc_lm_4<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade-MinimapRightClicks)
 sc_lm_final<-update(sc_lm,.~.-Age-TotalMapExplored-UniqueUnitsMade-MinimapRightClicks-ComplexUnitsMade)
-
 ```
 
-Before beginning diagnostic tests, a model with all predictors will be made. Subsequently predictors will be dropped one by one until only predictors with significance of at least $\alpha=5\%$ remain starting with $lm_\Omega$ and end with $lm_\omega$. The results are as follows:
+Before beginning diagnostic tests, a model with all predictors will be made. Subsequently predictors will be dropped one by one until only predictors with significance of at least $\alpha=5\%$ remain starting with $lm_\Omega$ and ending with $lm_\omega$. The results are as follows:
 
-The all inclusive model summary:
+The intial model has many significant predictors. The $lm_\Omega$ summary:
 ```{r, echo=FALSE,compact=FALSE}
-kable(tidy(sc_lm,conf.level = .05),digits = c(3,4,4,1),caption = "Summary of Starting Manual Stepwise Backward Model Selection $lm_\\Omega$")
+kable(tidy(sc_lm,conf.level = .05),digits = c(4,4,4,1),caption = "Summary of Starting Manual Stepwise Backward Model Selection $lm_\\Omega$")
 ```
+
 **Age,UniqueUnitsMade,ComplexUnitsMade, MinimapRightClicks, and TotalMapExplored** were removed in that order across the 5 iterations of the model. All remaining predictors were significant to the predetermined $\alpha$. The final iteration provided:
+
+After 5 iterations the all predictors were significant to the predetermined alpha level. The final iteration provided:
+
 ```{r, echo=FALSE}
-kable(tidy(sc_lm_final,conf.level = .05),digits = c(3,4,4,1),caption = "Summary of Final Manual Stepwise Backward Model Selection$lm_\\omega$")
+kable(tidy(sc_lm_final,conf.level = .05),digits = c(4,4,4,1),caption = "Summary of Final Manual Stepwise Backward Model Selection$lm_\\omega$")
 ```
+
 ### Assessing Fit and Overall Significance
 
 Before proceeding with further analysis of the model, a statistical test will be performed to see if the predictors provide statistically significant better model than $Y=\overset{\_}{Y}+\epsilon$ where $Y=LeagueIndex$ .Thus the null model $H_o$ is there is no systematic structure to the response LeagueIndex given the predictors $X$ such that $\beta=0$. Our alternative $H_a$ is there is some relation such that $LeagueIndex=X\beta+\epsilon$, where X all other variables with the exception of index **GameID**. Without much surprise using `r length(colnames(sc))-1` predictor variables results of a very small p-value of ~`r glance(sc_lm)$p.value `. Over the iteration this does not change in a notable fashion across the 9 other models as the last model also results in a p-value`r glance(sc_lm_4)$p.value`. Thus all iterations of the model we can reject the null hypothesis suggesting that we should further investigate the explanatory power of our alternative hypothesis. 
+
+Our null model $H_o$ is there is no systematic structure to the response LeagueIndex. Our alternative $H_a$ is there is some relation such that $LeagueIndex=X\beta+\epsilon$, where X all other variables with the exception of index GameID. Without much surprise using `r length(colnames(sc))-1` predictor variables results of a very small p-value of ~`r glance(sc_lm)$p.value `. Over the iteration this does not change in a notable fashion across the 4 other models as the last model also results in a p-value`r glance(sc_lm_4)$p.value`. Thus all iterations of the model we can reject the null hypothesis suggesting that we should further investigate the explanatory power of our alternative hypothesis's more simplistic appoarch. 
 
 ```{r, include=FALSE, compact=TRUE}
 ### Noramlity of Residuals Both Models
@@ -353,6 +361,19 @@ Evaluate the goodness of fit of the model in terms of R2 and the standard errors
 ### Model Analysis Reform (Trim and then confound)
 
 Describe your model, how you arrived at it, its goodness of fit, its significance versus other choices of models, and its uncertainty. Describe the predictive power, and the uncertainty. Include relevant tables and figures.
+
+https://www.scribbr.com/methodology/confounding-variables/
+
+Upon closer examination of the remaining predictors its surpsing that TotalHours and HoursPerWeek do not have a higher correlation. Assign to hotkeys is a fairly highly correlated with APM that they warrant a further investigation.
+```{r omegecor,echo=FALSE}
+sc_omega<-sc%>%select(HoursPerWeek,TotalHours,HoursPerWeek,APM,AssignToHotkeys,UniqueHotkeys,UniqueHotkeys,MinimapAttacks,WorkersMade,ComplexUnitsMade)
+
+sc_omega_cor<-cor(select_if(sc_omega,is.numeric),use = "complete.obs")
+sc_omega_cor_plot<-corrplot(sc_omega_cor,
+    tl.cex=.75,
+    tl.col='black',
+    method="number")
+```
 
 ## Predict
 

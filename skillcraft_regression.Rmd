@@ -1,7 +1,7 @@
 ---
 title: "SkillCraft Multivariant Regression"
 author: "Arrington Walters"
-date: "10/7/2020"
+date: "11/4/2020"
 output:
   html_document: default
   word_document: default
@@ -13,7 +13,7 @@ editor_options:
 ```{bash git, eval=FALSE, include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "rereading"
+git commit -m "Recording the potential confounding variables."
 git push
 ```
 
@@ -251,30 +251,9 @@ do.call("grid.arrange", c(plots[9:13], ncol=2))
 
 # Model Specifications
 
-```{r exhaustivestepwise,echo=FALSE,collapse=TRUE}
-
-## Stepwise Linear Regression:
-
-#The function summary() reports the best set of variables for each model size. From the output above, an asterisk #specifies that a given variable is included in the corresponding model @Stepwise.
 
 
-#library(caret) #for easy machine learning workflow
-#library(leaps) #for computing stepwise regression
-
-#sc_lm_sw_back<-regsubsets(LeagueIndex~., sc, nvmax = 5,
-#                     method = "exhaust",force.in = NULL,force.out = NULL)
-
-#sc_lm_sw_back_summary<-summary(sc_lm_sw_back)
-#using the lm provivded 
-#sc_lm_r1<-lm(LeagueIndex~ActionLatency+AssignToHotkeys+APM+MinimapAttacks,sc)
-#summary(sc_lm_r1,cor=T)
-
-#Normality
-#qqnorm(residuals(sc_lm_r1))
-#shapiro.test(residuals(sc_lm_r1))
-```
-
-## Multivariant Regression Model Manual ModelIterations ($\Omega$ to $\omega$)
+## Multivariant Regression Model Manual Model Iterations ($\Omega$ to $\omega$)
 
 ```{r modeltrimming,echo=FALSE}
 sc_lm<-lm(LeagueIndex~.,sc)
@@ -339,7 +318,7 @@ kable(anova(sc_lm,sc_lm_final),digits=2)
 
 The confidence Intervals Table^[Delta values are normalized by dividing by the mean of the model by related predictors confidence interval] show only a few subtleties between models coefficients confidence intervals. 
 
-In the starting model **Age, MinimapRightClicks, UniqueUnitsMade, ComplexUnitsMade, and ComplexAbilitiesUsed** are all not significant based on their p-value and their confidence intervals straddle 0. Interesting enough **ComplexAbilitiesUsed** was initially above the alpha value for significance but made it to the final model. The magnitude of this shift is reflected in its delta value and delta_width.
+In the starting model **Age, MinimapRightClicks, UniqueUnitsMade, ComplexUnitsMade, and ComplexAbilitiesUsed** are all not significant based on their p-value and their confidence intervals straddle 0. Interesting enough **ComplexAbilitiesUsed** was initially above the alpha value for significance but made it to the final model. This could be because of the removal of a confunding variable. The magnitude of this shift is reflected in its delta value and delta_width.
 
 For comparison two summary statistics were added as follows:
 
@@ -362,11 +341,13 @@ kable(t3,format = "markdown", digits = c(4,4,4,4,4,4,4,2,2), caption="Confidence
 
 ### Confounding
 
-high that a confounding variable may have been removed. Revisiting correlation plot generated previousl
-
 https://www.scribbr.com/methodology/confounding-variables/
 
-Upon closer examination of the remaining predictors its surprising that TotalHours and HoursPerWeek do not have a higher correlation. Assign to hotkeys is a fairly highly correlated with APM that they warrant a further investigation.
+Upon closer examination of the remaining predictors its surprising that TotalHours and HoursPerWeek do not have a higher correlation. I did not expect both two make it to the final mode. 
+
+Assign to hotkeys is a fairly highly correlated with APM that they warrant a further investigation. **AssignToHotkeys** was considered to be dropped along with the PAC related predictors prior but I imaged it added a significant flavor to what type of actions regardless of its potential confoundince.
+
+The notable change in **ComplexAbilitiesUsed** is is likely a result the removal of the variable **ComplexUnitMade
 ```{r omegecor,echo=FALSE}
 sc_omega<-sc%>%select(HoursPerWeek,TotalHours,HoursPerWeek,APM,AssignToHotkeys,UniqueHotkeys,UniqueHotkeys,MinimapAttacks,WorkersMade,ComplexUnitsMade)
 
@@ -376,7 +357,6 @@ sc_omega_cor_plot<-corrplot(sc_omega_cor,
     tl.col='black',
     method="number")
 ```
-
 
 ### Structural Uncertainty in the Model
 
@@ -392,11 +372,9 @@ ggplot(sc_lm, aes(x=APM, y=factor(LeagueIndex),color='blue'))+geom_point() +geom
 #plot(sc_lm_final)
 ```
 
-Does this point stick across two different models?
-
 ## Predict
 
-Evaluate the predictive power of the model – particularly, how effective does the model appear to be at making predictions of future observations or the mean response. How might these predictions be unreliable? What are the limits of the prediction power, and where do we fall into extrapolation? 
+Evaluate the predictive power of the model – particularly, how effective does the model appear to be at making predictions of future observations or the mean response. How might these predictions be unreliable? What are the limits of the prediction power, and where do we fall into extrapolation? Does this point stick across two different models?
 
 ## Prelude to final
 
@@ -406,31 +384,10 @@ For the final, the logistical regression will remodel the same problem with a di
 
 The goal is for the analysis pull in additional regression techniques while still integrating the previous exploratory exercises.
 
-```{r, eval=FALSE,include=FALSE,include = FALSE}
-data <-get_league_data(season_id = 43, 
-                        queue_id = 201, 
-                        team_type = 0, 
-                        league_id = 3, 
-                        host_region = "eu")
-ladder_id <- data$tier$division[[1]]$ladder_id
-
-for (i in ladder_id){
-counter<-0
-  if (counter==0){
-    headsc <- get_ladder_data(ladder_id = i, host_region = "eu")
-    counter<-counter+1}
-  else{
-    headsc<-rbind(headsc,get_ladder_data(ladder_id = i, host_region = "eu"))
-  }
-  }
-#ladder_data <- get_ladder_data(ladder_id = ladder_id, host_region = "eu")
-```
-
 # Appendix
 
 ### About Columns
-Attribute Information:
-
+**Attribute Information:**
 1. GameID: Unique ID number for each game (integer)
 2. LeagueIndex: Bronze, Silver, Gold, Platinum, Diamond, Master, GrandMaster, and Professional leagues coded 1-8 (Ordinal)
 3. Age: Age of each player (integer)

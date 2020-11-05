@@ -347,7 +347,7 @@ Upon closer examination of the remaining predictors its surprising that TotalHou
 
 Assign to hotkeys is a fairly highly correlated with APM that they warrant a further investigation. **AssignToHotkeys** was considered to be dropped along with the PAC related predictors prior but I imaged it added a significant flavor to what type of actions regardless of its potential confoundince.
 
-The notable change in **ComplexAbilitiesUsed** is is likely a result the removal of the variable **ComplexUnitMade
+The notable change in **ComplexAbilitiesUsed** is is likely a result the removal of the variable **ComplexUnitMade** .
 ```{r omegecor,echo=FALSE}
 sc_omega<-sc%>%select(HoursPerWeek,TotalHours,HoursPerWeek,APM,AssignToHotkeys,UniqueHotkeys,UniqueHotkeys,MinimapAttacks,WorkersMade,ComplexUnitsMade)
 

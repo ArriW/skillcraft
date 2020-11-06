@@ -13,7 +13,7 @@ editor_options:
 ```{bash git, eval=FALSE, include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "Recording the potential confounding variables."
+git commit -m "Tests of confounding"
 git push
 ```
 
@@ -251,8 +251,6 @@ do.call("grid.arrange", c(plots[9:13], ncol=2))
 
 # Model Specifications
 
-
-
 ## Multivariant Regression Model Manual Model Iterations ($\Omega$ to $\omega$)
 
 ```{r modeltrimming,echo=FALSE}
@@ -343,11 +341,24 @@ kable(t3,format = "markdown", digits = c(4,4,4,4,4,4,4,2,2), caption="Confidence
 
 https://www.scribbr.com/methodology/confounding-variables/
 
-Upon closer examination of the remaining predictors its surprising that TotalHours and HoursPerWeek do not have a higher correlation. I did not expect both two make it to the final mode. 
+Upon closer examination of the remaining predictors its surprising that TotalHours and HoursPerWeek do not have a higher correlation. I did not expect both two make it to the final model. 
 
 Assign to hotkeys is a fairly highly correlated with APM that they warrant a further investigation. **AssignToHotkeys** was considered to be dropped along with the PAC related predictors prior but I imaged it added a significant flavor to what type of actions regardless of its potential confoundince.
+```{r}
+sc_lm_5<-update(sc_lm_final,.~.+ComplexUnitsMade)
+kable(tidy(sc_lm_5,conf.level = .05)[9:10,],caption = "Confounding Model CompelxUnitsMade and Complex Abilities Used")
+kable(anova(sc_lm_final,sc_lm_5),digits=2)
+```
 
-The notable change in **ComplexAbilitiesUsed** is is likely a result the removal of the variable **ComplexUnitMade** .
+The notable change in **ComplexAbilitiesUsed** is is likely a result the removal of the variable **ComplexUnitsMade**. Upon reintroducing ComplexUnitsMade into the final model we find the following p-values for both predictors to be insignificant. This is a warning that we may not be able to distriguish the effects or vary them independently. This aligns with what is exepcted, players have to make complex units before they can use their compelx abilities.
+```{r}
+sc_lm_5<-update(sc_lm_final,.~.+ComplexUnitsMade)
+kable(tidy(sc_lm_5,conf.level = .05)[9:10,],caption = "Confounding Model CompelxUnitsMade and Complex Abilities Used")
+kable(anova(sc_lm_final,sc_lm_5),digits=2)
+```
+
+In each of the 3 cases linear models with and without pieces of the pairs will be explored.
+
 ```{r omegecor,echo=FALSE}
 sc_omega<-sc%>%select(HoursPerWeek,TotalHours,HoursPerWeek,APM,AssignToHotkeys,UniqueHotkeys,UniqueHotkeys,MinimapAttacks,WorkersMade,ComplexUnitsMade)
 

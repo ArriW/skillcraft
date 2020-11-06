@@ -13,7 +13,7 @@ editor_options:
 ```{bash git, eval=FALSE, include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "Tests of confounding"
+git commit -m "more on confouning variables"
 git push
 ```
 
@@ -339,25 +339,7 @@ kable(t3,format = "markdown", digits = c(4,4,4,4,4,4,4,2,2), caption="Confidence
 
 ### Confounding
 
-https://www.scribbr.com/methodology/confounding-variables/
 
-Upon closer examination of the remaining predictors its surprising that TotalHours and HoursPerWeek do not have a higher correlation. I did not expect both two make it to the final model. 
-
-Assign to hotkeys is a fairly highly correlated with APM that they warrant a further investigation. **AssignToHotkeys** was considered to be dropped along with the PAC related predictors prior but I imaged it added a significant flavor to what type of actions regardless of its potential confoundince.
-```{r}
-sc_lm_5<-update(sc_lm_final,.~.+ComplexUnitsMade)
-kable(tidy(sc_lm_5,conf.level = .05)[9:10,],caption = "Confounding Model CompelxUnitsMade and Complex Abilities Used")
-kable(anova(sc_lm_final,sc_lm_5),digits=2)
-```
-
-The notable change in **ComplexAbilitiesUsed** is is likely a result the removal of the variable **ComplexUnitsMade**. Upon reintroducing ComplexUnitsMade into the final model we find the following p-values for both predictors to be insignificant. This is a warning that we may not be able to distriguish the effects or vary them independently. This aligns with what is exepcted, players have to make complex units before they can use their compelx abilities.
-```{r}
-sc_lm_5<-update(sc_lm_final,.~.+ComplexUnitsMade)
-kable(tidy(sc_lm_5,conf.level = .05)[9:10,],caption = "Confounding Model CompelxUnitsMade and Complex Abilities Used")
-kable(anova(sc_lm_final,sc_lm_5),digits=2)
-```
-
-In each of the 3 cases linear models with and without pieces of the pairs will be explored.
 
 ```{r omegecor,echo=FALSE}
 sc_omega<-sc%>%select(HoursPerWeek,TotalHours,HoursPerWeek,APM,AssignToHotkeys,UniqueHotkeys,UniqueHotkeys,MinimapAttacks,WorkersMade,ComplexUnitsMade)
@@ -367,6 +349,38 @@ sc_omega_cor_plot<-corrplot(sc_omega_cor,
     tl.cex=.75,
     tl.col='black',
     method="number")
+```
+
+https://www.scribbr.com/methodology/confounding-variables/
+
+### Hours Metrics
+
+Upon closer examination of the remaining predictors its surprising that **TotalHours** and **HoursPerWeek** do not have a higher correlation. I did not expect both two make it to the final model. 
+
+#### Complex Units/Abilities
+
+The notable change in **ComplexAbilitiesUsed** is likely a result the removal of the variable **ComplexUnitsMade**. Upon reintroducing **ComplexUnitsMade** into the final model we find the following p-values for both predictors to be insignificant. This is a warning that we may not be able to distinguish the effects or vary them independently. This aligns with what is expected, players must make complex units before they can use their complex abilities. 
+
+The way forward with the model is to continue leaving out **ComplexUnitsMade** because simply making a unit in SC2 is far from a win condition. In the case of worker units or in the scope of this model **WorkerUnitsMade**, a player may produce workers and subsequently assign them to do work with single command indefinitely. Work units if not interrupted by an attacking force, will continue to add value in the inform of the in-game economy without additional intervention from the player. Complex units on the other hand mostly perform offensive or defense actions requiring direct management with precise timing based on the movements of the opponent. Using complex abilities, furthermore using them well, is generally much more important then making these complex units in masses. This also compliments the initial goal of the modeling to add flavor to APMs in a way that may reveal what actions are important and fortunately these there are mostly orthogonal with cor `r round(cor(sc$APM,sc$ComplexAbilitiesUsed),2)`.
+```{r, echo=FALSE}
+sc_lm_5<-update(sc_lm_final,.~.+ComplexUnitsMade)
+kable(tidy(sc_lm_5,conf.level = .05)[9:10,],caption = "ANOVA $lm_\\omega$ and $lm_\\omega+ComplexUnitsMade$")
+kable(anova(sc_lm_final,sc_lm_5),digits=2)
+```
+
+#### AssigntToHotkeys and Actions Per Minute
+```{r,echo=FALSE}
+sc_lm_6<-update(sc_lm_final,.~.-APM)
+sc_lm_7<-update(sc_lm_final,.~.-AssignToHotkeys)
+```
+
+Assign to hotkeys is a fairly highly correlated with APM that they warrant a further investigation. **AssignToHotkeys** was considered to be dropped along with the PAC related predictors prior but I imaged it added a significant flavor to what type of actions regardless of its potential for confounding.**AssignToHotkeys** in game is when a player assigns units or buildings to hotkeys. For example if the player has two armies they may select all of the units in army 1 and use the hotkey combination *CTRL+1* to assign those units to hotkey *1* for future use. Then the same player can select their second army use *Ctrl+2* to hotkey *2*. This works for any command unit or building in game, allowing the player to on the fly reshape hotkeys based as assets are gained or lost. 
+
+Both variables will be removed from the model one at a time and then compared to the final model that contains both. In both subset models' **RSS** are statistically significant different. In terms of the impact to $adjR^2$, as **APMs** seem to a explain a significant amount more than **AssignToHotkeys** as the models have with $adjR^2$ of `r round(summary(sc_lm_6)[["adj.r.squared"]],2)` and `r round(summary(sc_lm_7)[["adj.r.squared"]],2)` compared to the final model `r round(summary(sc_lm_final)[["adj.r.squared"]],2)`. To reaffirm the initial effort of dropping predi
+
+```{r,echo=FALSE}
+kable(anova(sc_lm_final,sc_lm_6),digits=3,caption = "ANOVA $lm_\\omega$ and $lm_\\omega-APM$")
+kable(anova(sc_lm_final,sc_lm_7),digits=3,caption = "ANOVA $lm_\\omega$ and $lm_\\omega-AssignToHotkeys$")
 ```
 
 ### Structural Uncertainty in the Model
@@ -398,7 +412,9 @@ The goal is for the analysis pull in additional regression techniques while stil
 # Appendix
 
 ### About Columns
+
 **Attribute Information:**
+
 1. GameID: Unique ID number for each game (integer)
 2. LeagueIndex: Bronze, Silver, Gold, Platinum, Diamond, Master, GrandMaster, and Professional leagues coded 1-8 (Ordinal)
 3. Age: Age of each player (integer)
@@ -441,4 +457,3 @@ grid.arrange(p1,p2,p3,p4,ncol=2)
 ```
 
 # References
-[^ViolinPloyts]: This is a random test.

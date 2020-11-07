@@ -13,7 +13,7 @@ editor_options:
 ```{bash git, eval=FALSE, include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "starting on predictions and model uncertainty"
+git commit -m "flattening predictors"
 git push
 ```
 
@@ -391,10 +391,17 @@ Evaluate the predictive power of the model – particularly, how effective does 
 ### Structural Uncertainty in the Model
 
 Without using cross validation we can see some basic issues with the fitted values of the each model reviewed. Initially we can start with one of more dominate predictors APM and see that based some players are excepted to have a LeagueIndex>>10 which simply does not exist. Another part of the models bias is that it does not place anyone below **LeagueIndex=** `r min(round(fitted(sc_lm)))`
+
 ```{r, compact=TRUE,collapse=TRUE,echo=FALSE}
+
+sc_lm_rounded<-sc_lm_final
+sc_lm_rounded$fitted.values[sc_lm_rounded$fitted.values>7]<-7
+
 ggplot(sc_lm_final, aes(x=APM, y=factor(LeagueIndex),color='blue'))+geom_point() +geom_point(aes(y=fitted(sc_lm_final),color='red')) +ggtitle("Fitted Values and Sample by \nAPM")+theme_classic()
 
-ggplot(sc_lm_final, aes(x=APM, y=factor(LeagueIndex),color='blue'))+geom_point() +geom_point(aes(y=round(fitted(sc_lm_final),0),color='red')) +ggtitle("Fitted Values Rounded and Sample by \nAPM")+theme_classic()
+ggplot(sc_lm_final, aes(x=APM, y=factor(LeagueIndex),color='blue'))+geom_point() +geom_point(aes(y=round(sc_lm_rounded$fitted.values),color='red')) +ggtitle("Fitted Values Rounded and Sample by \nAPM")+theme_classic()
+
+round(sum((sc$LeagueIndex==round(sc_lm_rounded$fitted.values)))/count(sc),2)
 ```
 
 ## Prelude to final

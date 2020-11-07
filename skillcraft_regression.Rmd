@@ -13,7 +13,7 @@ editor_options:
 ```{bash git, eval=FALSE, include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "flattening predictors"
+git commit -m "pseduo confusion"
 git push
 ```
 
@@ -189,7 +189,8 @@ Focusing exclusively on **APM** fits into an Occam's razor approach by minimizin
 sc_cor<-cor(select_if(sc,is.numeric),use = "complete.obs")
 sc_cor_plot<-corrplot(sc_cor,
     tl.cex=.75,
-    tl.col='black')
+    tl.col='black',
+    type="lower",)
 ```
 
 ```{r dropconfounding, echo=FALSE}
@@ -316,7 +317,7 @@ kable(anova(sc_lm,sc_lm_final),digits=2)
 
 The confidence Intervals Table^[Delta values are normalized by dividing by the mean of the model by related predictors confidence interval] show only a few subtleties between models coefficients confidence intervals. 
 
-In the starting model **Age, MinimapRightClicks, UniqueUnitsMade, ComplexUnitsMade, and ComplexAbilitiesUsed** are all not significant based on their p-value and their confidence intervals straddle 0. Interesting enough **ComplexAbilitiesUsed** was initially above the alpha value for significance but made it to the final model. This could be because of the removal of a confunding variable. The magnitude of this shift is reflected in its delta value and delta_width.
+In the starting model **Age, MinimapRightClicks, UniqueUnitsMade, ComplexUnitsMade, and ComplexAbilitiesUsed** are all not significant based on their p-value and their confidence intervals straddle 0. Interesting enough **ComplexAbilitiesUsed** was initially above the alpha value for significance but made it to the final model. This could be because of the removal of a confounding variable. The magnitude of this shift is reflected in its delta value and delta_width.
 
 For comparison two summary statistics were added as follows:
 
@@ -339,6 +340,7 @@ kable(t3,format = "markdown", digits = c(4,4,4,4,4,4,4,2,2), caption="Confidence
 
 ### Confounding
 
+
 ```{r omegecor,echo=FALSE}
 sc_omega<-sc%>%select(HoursPerWeek,TotalHours,HoursPerWeek,APM,AssignToHotkeys,UniqueHotkeys,UniqueHotkeys,MinimapAttacks,WorkersMade,ComplexUnitsMade)
 
@@ -346,10 +348,9 @@ sc_omega_cor<-cor(select_if(sc_omega,is.numeric),use = "complete.obs")
 sc_omega_cor_plot<-corrplot(sc_omega_cor,
     tl.cex=.75,
     tl.col='black',
-    method="number")
+    method="number",
+    type="lower")
 ```
-
-https://www.scribbr.com/methodology/confounding-variables/
 
 ### Hours Metrics
 
@@ -359,7 +360,7 @@ Upon closer examination of the remaining predictors its surprising that **TotalH
 
 The notable change in **ComplexAbilitiesUsed**'s confidence interval mentioned between the $lm_\Omega$ to $lm_\omega$ is likely a result the removal of the variable **ComplexUnitsMade**. Upon reintroducing **ComplexUnitsMade** into the final model we find the following p-values for both predictors to be insignificant. This is a warning that we may not be able to distinguish the effects or vary them independently. This aligns with what is expected based on the mechanics of the game. A players must make complex units before they can use their complex abilities. 
 
-The way forward with the model is to continue leaving out **ComplexUnitsMade** because only making a unit in SC2 is far from a win condition. Complex units must be utilized within percise contexts to reap their full value. On the otherhand worker units reflected in the predictor **WorkerUnitsMade**, are units a  player may produce and subsequently assign them to do indefinite valued added work. If not interrupted by an attacking force, worker units will continue to add value in the inform of the in-game economy without additional intervention from the player as long as the resource node is still abundant.
+The way forward with the model is to continue leaving out **ComplexUnitsMade** because only making a unit in SC2 is far from a win condition. Complex units must be utilized with percision and within the right contexts to reap their full value. On the otherhand worker units reflected in the predictor **WorkerUnitsMade**, are units a  player may produce and subsequently assign them to do indefinite valued added work. If not interrupted by an attacking force, worker units will continue to add value in the inform of the in-game economy without additional intervention from the player as long as the resource node is still abundant.
 
 Using complex abilities, furthermore using them well, is generally much more important then making these complex units in masses. This also compliments the initial goal of the modeling to add flavor to APMs in a way that may reveal what actions are important and fortunately APM and this **ComplexUnitsUsed** these there are mostly orthogonal with cor `r round(cor(sc$APM,sc$ComplexAbilitiesUsed),2)`.
 
@@ -375,9 +376,9 @@ sc_lm_6<-update(sc_lm_final,.~.-APM)
 sc_lm_7<-update(sc_lm_final,.~.-AssignToHotkeys)
 ```
 
-Assign to hotkeys is a fairly highly correlated with APM that they warrant a further investigation. **AssignToHotkeys** was considered to be dropped along with the PAC related predictors prior but I imaged it added a significant flavor to what type of actions regardless of its potential for confounding.**AssignToHotkeys** in game is when a player assigns units or buildings to hotkeys. For example if the player has two armies they may select all of the units in army 1 and use the hotkey combination *CTRL+1* to assign those units to hotkey *1* for future use. Then the same player can select their second army use *Ctrl+2* to hotkey *2*. This works for any command unit or building in game, allowing the player to on the fly reshape hotkeys based as assets are gained or lost. 
+**AssignToHotkeys and APM** have the highlest correlation within the final model. **AssignToHotkeys** was considered to be dropped along with the PAC related predictors prior but I imaged the preidcotr added a significant flavor to what type of actions regardless of its potential for confounding.**AssignToHotkeys** in game is when a player assigns units or buildings to hotkeys. For example within a match if the player has two armies they may select all of the units in army 1 and use the hotkey combination *CTRL+1* to assign those units to hotkey *1* for future rapid selection. Then the same player can select their second army use *Ctrl+2* to hotkey *2*. This works for any commandable unit or building in game, allowing the player to on the fly reshape hotkeys based as assets are gained or lost. 
 
-Both variables will be removed from the model one at a time and then compared to the final model that contains both. In both subset models' **RSS** are statistically significant different. In terms of the impact to $adjR^2$, as **APMs** seem to a explain a significant amount more than **AssignToHotkeys** as the models have with $adjR^2$ of `r round(summary(sc_lm_6)[["adj.r.squared"]],2)` and `r round(summary(sc_lm_7)[["adj.r.squared"]],2)` compared to the final model `r round(summary(sc_lm_final)[["adj.r.squared"]],2)`. To reaffirm the initial effort of dropping predictor for the final model persued in the next model.
+Both variables will be removed from the model one at a time and then compared to the final model that contains both. In both subset models' **RSS** are statistically significant differnces. In terms of the impact to $adjR^2$, as **APMs** seem to a explain a significant amount more than **AssignToHotkeys** as the models have with $adjR^2$ of `r round(summary(sc_lm_6)[["adj.r.squared"]],2)` and `r round(summary(sc_lm_7)[["adj.r.squared"]],2)` compared to the final model `r round(summary(sc_lm_final)[["adj.r.squared"]],2)`. To reaffirm the initial effort of dropping predictor for the final model persued in the next model.
 
 ```{r,echo=FALSE}
 kable(anova(sc_lm_final,sc_lm_6),digits=3,caption = "ANOVA $lm_\\omega$ and $lm_\\omega-APM$")
@@ -390,18 +391,35 @@ Evaluate the predictive power of the model – particularly, how effective does 
 
 ### Structural Uncertainty in the Model
 
-Without using cross validation we can see some basic issues with the fitted values of the each model reviewed. Initially we can start with one of more dominate predictors APM and see that based some players are excepted to have a LeagueIndex>>10 which simply does not exist. Another part of the models bias is that it does not place anyone below **LeagueIndex=** `r min(round(fitted(sc_lm)))`
+Without using cross validation we can see some basic issues with the fitted values of the each model reviewed. The first plot is a scatterplot with the fitted values and the dominate predictor APM. Some of the players are excepted to have a LeagueIndex>>10 which does not exist in sampled response. Although LeagueIndex > 7 does tease that Grandmaster tier is unbounded tier in terms of skillpoints. Overall, the the continous fitted values fail to capture the discrete nature of the response. 
+
+To help interpret the result the fitted values will be flattened such that  when LeagueIndex > 7 will be set LeagueIndex=7 then each value will be rounded so only integer values remain.
 
 ```{r, compact=TRUE,collapse=TRUE,echo=FALSE}
 
 sc_lm_rounded<-sc_lm_final
 sc_lm_rounded$fitted.values[sc_lm_rounded$fitted.values>7]<-7
+sc_lm_rounded$fitted.values<-round(sc_lm_rounded$fitted.values)
 
-ggplot(sc_lm_final, aes(x=APM, y=factor(LeagueIndex),color='blue'))+geom_point() +geom_point(aes(y=fitted(sc_lm_final),color='red')) +ggtitle("Fitted Values and Sample by \nAPM")+theme_classic()
+p1<-ggplot(sc_lm_final, aes(x=APM, y=factor(LeagueIndex),color='blue'))+geom_point() +geom_point(aes(y=fitted(sc_lm_final),color='red')) +ggtitle("Fitted Values and Sample by \nAPM")+theme_classic()
 
-ggplot(sc_lm_final, aes(x=APM, y=factor(LeagueIndex),color='blue'))+geom_point() +geom_point(aes(y=round(sc_lm_rounded$fitted.values),color='red')) +ggtitle("Fitted Values Rounded and Sample by \nAPM")+theme_classic()
+p2<-ggplot(sc_lm_final, aes(x=APM, y=factor(LeagueIndex),color='blue'))+geom_point() +geom_point(aes(y=round(sc_lm_rounded$fitted.values),color='red')) +ggtitle("Fitted Values Rounded and Sample by \nAPM")+theme_classic()
 
-round(sum((sc$LeagueIndex==round(sc_lm_rounded$fitted.values)))/count(sc),2)
+grid.arrange(p1,p2,ncol=2)
+```
+
+To assess the predictive accuracy of the model the flattened and rounded values fitted values are then compared to the sampled values overall providing a `r round(sum((sc$LeagueIndex==round(sc_lm_rounded$fitted.values)))/count(sc),2)*100`% accuracy. This is a very low accuracy considering the 100% of the data was used to train the model. Another part of the models bias is that it does not place anyone below **LeagueIndex=** `r min(round(fitted(sc_lm)))`. The following shows the predictive accuracy at each LeagueIndex.
+
+```{r,echo=FALSE}
+sc_predicted<-data.frame("LeagueIndex"=sc$LeagueIndex,"FlattenFitted"=sc_lm_rounded$fitted.values)
+
+sc_predicted$correct<-sc_predicted$LeagueIndex==sc_predicted$FlattenFitted
+
+sc_predicted_agg<-sc_predicted%>%group_by(LeagueIndex)%>%
+  add_tally()%>%summarise(correct_perc=sum(correct)/max(n),incorrect_perc=1-sum(correct)/max(n),n=max(n))
+
+ggplot(sc_predicted_agg,aes(x=LeagueIndex,y=correct_perc))+geom_col(fill='darkgreen')+ylim(0,1)+
+geom_text(aes(label = paste("n =",n)), vjust = -0.5)+theme_classic()+ylab("Correct %")
 ```
 
 ## Prelude to final

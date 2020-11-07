@@ -13,7 +13,7 @@ editor_options:
 ```{bash git, eval=FALSE, include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "more on confouning variables"
+git commit -m "starting on predictions and model uncertainty"
 git push
 ```
 
@@ -339,8 +339,6 @@ kable(t3,format = "markdown", digits = c(4,4,4,4,4,4,4,2,2), caption="Confidence
 
 ### Confounding
 
-
-
 ```{r omegecor,echo=FALSE}
 sc_omega<-sc%>%select(HoursPerWeek,TotalHours,HoursPerWeek,APM,AssignToHotkeys,UniqueHotkeys,UniqueHotkeys,MinimapAttacks,WorkersMade,ComplexUnitsMade)
 
@@ -359,9 +357,12 @@ Upon closer examination of the remaining predictors its surprising that **TotalH
 
 #### Complex Units/Abilities
 
-The notable change in **ComplexAbilitiesUsed** is likely a result the removal of the variable **ComplexUnitsMade**. Upon reintroducing **ComplexUnitsMade** into the final model we find the following p-values for both predictors to be insignificant. This is a warning that we may not be able to distinguish the effects or vary them independently. This aligns with what is expected, players must make complex units before they can use their complex abilities. 
+The notable change in **ComplexAbilitiesUsed**'s confidence interval mentioned between the $lm_\Omega$ to $lm_\omega$ is likely a result the removal of the variable **ComplexUnitsMade**. Upon reintroducing **ComplexUnitsMade** into the final model we find the following p-values for both predictors to be insignificant. This is a warning that we may not be able to distinguish the effects or vary them independently. This aligns with what is expected based on the mechanics of the game. A players must make complex units before they can use their complex abilities. 
 
-The way forward with the model is to continue leaving out **ComplexUnitsMade** because simply making a unit in SC2 is far from a win condition. In the case of worker units or in the scope of this model **WorkerUnitsMade**, a player may produce workers and subsequently assign them to do work with single command indefinitely. Work units if not interrupted by an attacking force, will continue to add value in the inform of the in-game economy without additional intervention from the player. Complex units on the other hand mostly perform offensive or defense actions requiring direct management with precise timing based on the movements of the opponent. Using complex abilities, furthermore using them well, is generally much more important then making these complex units in masses. This also compliments the initial goal of the modeling to add flavor to APMs in a way that may reveal what actions are important and fortunately these there are mostly orthogonal with cor `r round(cor(sc$APM,sc$ComplexAbilitiesUsed),2)`.
+The way forward with the model is to continue leaving out **ComplexUnitsMade** because only making a unit in SC2 is far from a win condition. Complex units must be utilized within percise contexts to reap their full value. On the otherhand worker units reflected in the predictor **WorkerUnitsMade**, are units a  player may produce and subsequently assign them to do indefinite valued added work. If not interrupted by an attacking force, worker units will continue to add value in the inform of the in-game economy without additional intervention from the player as long as the resource node is still abundant.
+
+Using complex abilities, furthermore using them well, is generally much more important then making these complex units in masses. This also compliments the initial goal of the modeling to add flavor to APMs in a way that may reveal what actions are important and fortunately APM and this **ComplexUnitsUsed** these there are mostly orthogonal with cor `r round(cor(sc$APM,sc$ComplexAbilitiesUsed),2)`.
+
 ```{r, echo=FALSE}
 sc_lm_5<-update(sc_lm_final,.~.+ComplexUnitsMade)
 kable(tidy(sc_lm_5,conf.level = .05)[9:10,],caption = "ANOVA $lm_\\omega$ and $lm_\\omega+ComplexUnitsMade$")
@@ -376,30 +377,25 @@ sc_lm_7<-update(sc_lm_final,.~.-AssignToHotkeys)
 
 Assign to hotkeys is a fairly highly correlated with APM that they warrant a further investigation. **AssignToHotkeys** was considered to be dropped along with the PAC related predictors prior but I imaged it added a significant flavor to what type of actions regardless of its potential for confounding.**AssignToHotkeys** in game is when a player assigns units or buildings to hotkeys. For example if the player has two armies they may select all of the units in army 1 and use the hotkey combination *CTRL+1* to assign those units to hotkey *1* for future use. Then the same player can select their second army use *Ctrl+2* to hotkey *2*. This works for any command unit or building in game, allowing the player to on the fly reshape hotkeys based as assets are gained or lost. 
 
-Both variables will be removed from the model one at a time and then compared to the final model that contains both. In both subset models' **RSS** are statistically significant different. In terms of the impact to $adjR^2$, as **APMs** seem to a explain a significant amount more than **AssignToHotkeys** as the models have with $adjR^2$ of `r round(summary(sc_lm_6)[["adj.r.squared"]],2)` and `r round(summary(sc_lm_7)[["adj.r.squared"]],2)` compared to the final model `r round(summary(sc_lm_final)[["adj.r.squared"]],2)`. To reaffirm the initial effort of dropping predi
+Both variables will be removed from the model one at a time and then compared to the final model that contains both. In both subset models' **RSS** are statistically significant different. In terms of the impact to $adjR^2$, as **APMs** seem to a explain a significant amount more than **AssignToHotkeys** as the models have with $adjR^2$ of `r round(summary(sc_lm_6)[["adj.r.squared"]],2)` and `r round(summary(sc_lm_7)[["adj.r.squared"]],2)` compared to the final model `r round(summary(sc_lm_final)[["adj.r.squared"]],2)`. To reaffirm the initial effort of dropping predictor for the final model persued in the next model.
 
 ```{r,echo=FALSE}
 kable(anova(sc_lm_final,sc_lm_6),digits=3,caption = "ANOVA $lm_\\omega$ and $lm_\\omega-APM$")
 kable(anova(sc_lm_final,sc_lm_7),digits=3,caption = "ANOVA $lm_\\omega$ and $lm_\\omega-AssignToHotkeys$")
 ```
 
-### Structural Uncertainty in the Model
-
-Without using cross validation we can see some basic issues with the fitted values of the model. Initially we can start with one of more dominate predictors APM and see that based some players are excepted to have a LeagueIndex>>10 which simply does not exist. Another part of the models bias is that it does not place anyone below **LeagueIndex=** `r min(round(fitted(sc_lm)))`
-```{r, compact=TRUE,collapse=TRUE,echo=FALSE}
-ggplot(sc_lm, aes(x=APM, y=factor(LeagueIndex),color='blue'))+geom_point() +geom_point(aes(y=fitted(sc_lm),color='red')) +ggtitle("Fitted Values and Sample by \nAPM")+theme_classic()
-
-#qqnorm(fitted(sc_lm))
-#qqline(fitted(sc_lm))
-#qqnorm(fitted(sc_lm_final))
-#qqline(fitted(sc_lm_final))
-#summary(sc_final)
-#plot(sc_lm_final)
-```
-
 ## Predict
 
 Evaluate the predictive power of the model – particularly, how effective does the model appear to be at making predictions of future observations or the mean response. How might these predictions be unreliable? What are the limits of the prediction power, and where do we fall into extrapolation? Does this point stick across two different models?
+
+### Structural Uncertainty in the Model
+
+Without using cross validation we can see some basic issues with the fitted values of the each model reviewed. Initially we can start with one of more dominate predictors APM and see that based some players are excepted to have a LeagueIndex>>10 which simply does not exist. Another part of the models bias is that it does not place anyone below **LeagueIndex=** `r min(round(fitted(sc_lm)))`
+```{r, compact=TRUE,collapse=TRUE,echo=FALSE}
+ggplot(sc_lm_final, aes(x=APM, y=factor(LeagueIndex),color='blue'))+geom_point() +geom_point(aes(y=fitted(sc_lm_final),color='red')) +ggtitle("Fitted Values and Sample by \nAPM")+theme_classic()
+
+ggplot(sc_lm_final, aes(x=APM, y=factor(LeagueIndex),color='blue'))+geom_point() +geom_point(aes(y=round(fitted(sc_lm_final),0),color='red')) +ggtitle("Fitted Values Rounded and Sample by \nAPM")+theme_classic()
+```
 
 ## Prelude to final
 

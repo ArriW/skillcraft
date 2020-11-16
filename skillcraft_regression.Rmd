@@ -3,17 +3,18 @@ title: "SkillCraft Multivariant Regression"
 author: "Arrington Walters"
 date: "11/4/2020"
 output:
+  pdf_document: default
   html_document: default
   word_document: default
 bibliography: ./inline/bibliography.bib
-editor_options: 
+editor_options:
   chunk_output_type: inline
 ---
 
 ```{bash git, eval=FALSE, include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "finalizing midterm 2"
+git commit -m "Copy Turned In"
 git push
 ```
 
@@ -42,14 +43,17 @@ library(reshape2) #melt function
 # Assignment Midterm 2
 
 #https://cgrudz.github.io/teaching/stat_757_2020_fall/assets/midterm_2.html
+
+#Final
+#https://cgrudz.github.io/teaching/stat_757_2020_fall/assets/final_project.html
 ```
 # Introduction
  
-Videogames are one of my favorite past times. As a player who participates in ranked play, I've always kept my eye on the forefront of global competitions. One of the most notable games to establish an international competitive scene backed by paid professionals was the real-time strategy game (RTS) Starcraft II (SC2). In 2013 the top 10 starcraft players by earnings made nearly four-million dollars from their combined winnings @Winnings2019. Watching top-caliber players reflexes and control is astonishing to even seasoned videogame enthusiasts. At the 2019 StarCraft II World Championship Finale, many others and I packed into the arena to see what these professions could do firsthand.
+Videogames are one of my favorite past times. As a player who participates in ranked play, I've always kept my eye on the forefront of global competitions. One of the most notable games to establish an international competitive scene backed by paid professionals was the real-time strategy game (RTS) Starcraft II (SC2). In 2013 the top 10 starcraft players made nearly four-million dollars from their combined winnings @Winnings2019. Watching top-caliber players reflexes and control is astonishing to even seasoned videogame enthusiasts. At the 2019 StarCraft II World Championship Finale, many others and I packed into the arena to see what these professions could do firsthand.
 
 !['@SC2IIWCSGlobal'](./inline/WCS.png)
 
-The eye-watering speeds they perform at is universally referenced in gaming terminology as actions per minute (APMS). Professionals take actions at such fast speeds (high APMS); it becomes challenging to follow their overall strategy. Past pondering their sheer speed, I found it difficult to distinctly define what made these players professionals.
+The eye-watering speeds they perform at is universally referenced in gaming terminology as actions per minute (APMS). Professionals take actions at such fast speeds (high APMS); it becomes challenging to follow their overall strategy. Past pondering their sheer speed, I found it difficult to distinctly define what made these players high skilled.
 
 To learn more about what defines talent in SC2 this analysis, we will explore in-game metrics to explain rank in competitive mode. The dataset used was provided by ['@UCI'](https://archive.ics.uci.edu/ml/datasets/SkillCraft1+Master+Table+Dataset).
 
@@ -79,13 +83,13 @@ colnames(sc)
 ```
 The appendix covers each in-depth, but the following are highlighted as a preface.
 
-**LeagueIndex** The levels of LeagueIndex range (1:8) corresponding to player ranks Bronze, Silver, Gold, Platinum, Diamond, Master, Grand Master. Visible to the player in-game, each medal bronze through master is subdivided into divisions 1-5. Each division is once again divided with rank points ranging from 0-100 where anything past Grandmaster **LeagueIndex=7** is not subdivided and unbounded in terms of rank points @Leagues2019. The rating system similar to an Elo rating system standard in chess. Elo's designs have an extreme value distribution, also known as a Gumbel distribution @ELO. Although that distribution would be problematic as a nonnormal response, it would provide some much-needed continuity by transforming players **LeagueIndex** into a more continuous experimental variable. Unfortunately, there are either unavailable or would require far too much cleaning for the scope of this analysis. 
+**LeagueIndex** The levels of LeagueIndex range 1-8 corresponding to player ranks Bronze, Silver, Gold, Platinum, Diamond, Master, Grand Master. Visible to the player in-game, each medal bronze through master is subdivided into divisions 1-5. Each division is once again but instead by divisions but is instead unbounded in terms of rank points @Leagues2019. The rating system similar to an Elo rating system standard in chess. Elo's designs have an extreme value distribution, also known as a Gumbel distribution @ELO. Although a Gumbel distribution would be problematic as a nonnormal response, it would provide some much-needed continuity by transforming players **LeagueIndex** into a more continuous experimental variable. Unfortunately, these subdivisions are either unavailable or would require far too much cleaning for the scope of this analysis. 
 
 The limitation of predicting this ordinal response will be revisited more precisely, along with the exploration, modeling, and predictions.
 
 The following are the icon's earned for players who achieve related rank by the end of a given season. The legends for the following plots are styled to match.
 
-\center !['@SC2IIWCSGlobal'](./inline/StarCraft-II-Leagues.png) \center
+!['@SC2IIWCSGlobal'](./inline/StarCraft-II-Leagues.png) 
 
 ```{r colorvector, echo=FALSE}
 cbPalette <- c("#CC6600", "#999999", "#FFCC00", "#CCCFFF", "#CCFFFF","#0072B2", "#FF6600")
@@ -111,7 +115,7 @@ print(paste('There are ',count_missing_age,' missing values in the age column. T
 
 The missing values are related exclusively to players with LeagueIndex equivalent to Professional Players (8). The `r count_professional` players with LeagueIndex==8 the age data is NA and the HoursPerWeek are 0. LeagueIndexes 1-7 are obtainable playing matches in the base game and ranking up by winning. To be a professional, you would have to be part of a team that has no direct role in the broader matchmaking system. This study aims to understand how players go from being average to good, less so elite to best. The 55 values associated with professionals will be dropped to resolve both issues.
 
-Another issue with **LeagueIndex** is that **LeagueIndex** 1-6 may contain many players, while **LeagueIndex** 7-Grandmaster may only include some set range of players targeted at 1000 total per region @Leagues2019. Dropping **LeagueIndex** 7 would be a step towards normality. Considering this multivariate linear model is already hampered by its selected application on an ELO system, **LeagueIndex**==7 will be kept to preserve a potential insight into Starcraft II players' larger population. 
+Another issue with **LeagueIndex** is that **LeagueIndex** 1-6 may contain many players, while **LeagueIndex** 7-Grandmaster may only include some set range of players targeted at 1000 total per region @Leagues2019. Dropping **LeagueIndex**=7 would be a step towards normality. Considering this multivariate linear model is already hampered by its selected application on an ELO system, **LeagueIndex**=7 will be kept to preserve a potential insight into Starcraft II players' larger population. 
 
 In addition to the missing values we have a clear error with the **TotalHours** of one player. $GameID = 5140$ has 1,000,000 **TotalHours** that equates to 114 years of game time.
 
@@ -122,7 +126,7 @@ sc<-filter(sc,sc$TotalHours<1000000)
 ```
 Finally, performing a necessary inspection on **HoursPerWeek**, a max value of 168 was discovered. Considering there are 168 hours in a week, it's not plausible for an individual player to do this. There could be multiple players using this account, making this possible. Another prospect is that this player is an AI like google's DeepMind @AlphaStar. Either way, this observation will be kept because what is the realistic cutoff for hours per week is not apparent, and after removing this observation, the next max value is 140, which seems almost as unrealistic.
 
-It's worth noting that dropping any amount of high hour outliers still far from combats all the potential abnormalities encountered through the use of **HoursPerWeek** and **TotalHours**. Multiple players could be using any of the accounts, even if either variable is not relatively large. Potentially exacerbating the left-extrema is that nothing prevents one player from smurfing multiple times. Smurfing is when a player makes an additional accounts @Smurf. A common reason for doing this is to dominate the competition until their Elo rating adapts to their actual skill level.
+It's worth noting that dropping any amount of high hour outliers still far from combats all the potential abnormalities encountered through the use of **HoursPerWeek** and **TotalHours**. Multiple players could be using any of the accounts, even if either time played variable is not relatively large. Potentially exacerbating the left-extrema is that nothing prevents one player from smurfing multiple times. Smurfing is when a player makes an additional accounts @Smurf. A common reason for doing this is to dominate the competition until their Elo rating adapts to their actual skill level.
 
 ```{r finalclean, include=FALSE ,echo=FALSE}
 sc<-sc%>%
@@ -150,19 +154,8 @@ sc<-sc%>%
          ActionLatency=ActionLatency*1000)
 ```
 
-
-```{r statsatlevels, include=FALSE}
-#sc$LeagueIndex <- as.factor(sc$LeagueIndex)
-#ggplot(sc, aes(x=LeagueIndex, y=ActionsInPAC)) + 
-#  geom_boxplot()
-#lm(LeagueIndex~APM,sc)
-```
-
 ## Summary Statistics and Plots
 
-```{r, echo=FALSE}
-#summary(sc)
-```
 ### Gaussianity of the Response
 
 When using the Shapiro-Wilk W test on response **LeagueIndex**, the null hypothesis that the sample comes from normally distribution can be rejected. Besides the obvious issues with performing a W test with an ordinal response with a potentially underlying Gumbel distribution, the response has a negative skew with a mean of `r round(mean(sc$LeagueIndex),2)`. Furthermore, there is no reason that **LeagueIndexes** are uniforming spaced in terms of overall rank or skill.
@@ -216,9 +209,11 @@ Visually determining trends between the predictors and responding with an ordina
 **MinimapAttacks, HoursPerweek, TotalHours, MinimapRightClicks, ComplexUnitsMade, ComplexAbilitiesUsed** all have very long right tails. In search of gaussian predictors, these predictors could be transformed for linearity. Although a transform would have affected the explanation's simplicity.^[A log transformation would be preferable, but enough observations by GameID that contain at least 0 in the related predictor entry would have to drop observations containing $-\infty$. If a transformation is pursued in the second half of this analysis, it will likely be a square root transformation]
 
 #### No Relationship
-**Age** the mean age of `r mean(sc$Age)` does not vary much across **LeagueIndex** such that there is no stark linear relationship. However, the variance at the highest level seems to be much narrower than that at the lower levels. 
+
+**Age** the mean age of `r round(mean(sc$Age))` does not vary much across **LeagueIndex** such that there is no stark linear relationship. However, the variance at the highest level seems to be much narrower than that at the lower levels. 
 
 #### Bimodal
+
 **HourPerWeek** has visibly little or no relation to **LeagueIndex** 1-4, where **LeagueIndex** 4-7 seems to have a visible linear trend resulting in `r cor_hoursperweek`. If **HoursPerWeek** survives the model trimming, it's bimodality may cause issues with the model's assumption $COV(Y)=\sigma^2I$.**Workersmade, ComplexUnitsMades, and ComplexAbilityUsed** both have similar differences between **LeagueIndex** 1-4 and 4-7 with the portions that have no relation and a linear relation swapped in comparison to **HoursPerWeek**. 
 
 #### Linear
@@ -226,6 +221,7 @@ Visually determining trends between the predictors and responding with an ordina
 **TotalHours, MinimapRightClicks, TotalMapExplored, and UniqueUnitsMade** have a positive linear trend with the response. **APM** has a strong linear relationship with the response. 
 
 #### Root
+
 **AssignToHotkeys, UniqueHotkeys, and MinimapAttacks** have a unique square root relationship with the response. This also may cause issues with the Gaussianity of the model's residuals.
 
 ```{r transform, echo=FALSE}
@@ -280,8 +276,8 @@ kable(tidy(sc_lm_final,conf.level = .05),caption = "Summary of Final Manual Step
 
 A test will be performed to see if the predictors provide statistically significant better model than the null model $Y=\overset{\_}{Y}+\epsilon$ where $Y=LeagueIndex$ . The hypothesis are as follows:
 
-\center$$H_o:\beta=0$$\center
-\center$$H_a:LeagueIndex=X\beta+\epsilon$$\center
+$$H_o:\beta=0$$
+$$H_a:LeagueIndex=X\beta+\epsilon$$
 
 Without much surprise using `r length(colnames(sc))-1` predictor variables results of a very small p-value of ~`r glance(sc_lm)$p.value `. Over the iteration, this does not change notably across the other models as the last model also results in a p-value ~`r glance(sc_lm_4)$p.value`. Thus all $\Delta p=p_\Omega-p_\omega$ iterations of the model, we can reject the null hypothesis suggesting that we should further investigate the explanatory power of our alternative hypothesis. 
 
@@ -289,8 +285,8 @@ Without much surprise using `r length(colnames(sc))-1` predictor variables resul
 
 If both models had normal residuals, an F-test could be used on $lm_\Omega$ and $lm_\omega$ to determine if the models have significantly different residuals. $RSS_\Omega$ and $RSS_\omega$ both have Shapiro-Wilk's test statistics that reject the null at $\alpha=5\%$ shown in a later section that examines the normality of each models' residuals. Without gaussian residuals conducting an ANOVA will be the only practice exercise for the final where the hypothesis is provided by:
 
- \center$$ H_o:RSS_\omega = RSS_\Omega$$\center
- \center$$ H_a:RSS_\omega \neq RSS_\Omega$$\center
+ $$ H_o:RSS_\omega = RSS_\Omega$$
+ $$ H_a:RSS_\omega \neq RSS_\Omega$$
  
 Performing an ANOVA test below, we find an insignificant difference in the models at $\alpha=5\%$ such that we cannot reject the $H_o$. The implications not rejecting $H_o$ is that regardless of trimming the predictor space by $\Delta p$ predictors, $lm_\omega$ is expected to produce comparable residuals with a 5% chance this is a result of the sampling. Additionally, their $adjR^2$ is barely different. Where  $adjR^2_\Omega=$ `r round(summary(sc_lm)[["adj.r.squared"]],4)` and $adjR^2_\omega=$ `r round(summary(sc_lm_final)[["adj.r.squared"]],4)`. Further analysis will be conducted to see if the predictive and explanatory power of the models differs past the magnitude of their residuals.
 
@@ -325,6 +321,7 @@ kable(t3,format = "markdown", digits = c(4,4,4,4,4,4,4,2,2), caption="Confidence
 ### Confounding
 
 For reference in the following analysis of confounding variables, the new correlation matrix provides a zoomed view of the target of discussion.
+
 ```{r omegecor,echo=FALSE}
 sc_omega<-sc%>%select(HoursPerWeek,TotalHours,HoursPerWeek,APM,AssignToHotkeys,WorkersMade,ComplexUnitsMade,ComplexAbilitiesUsed)
 
@@ -338,7 +335,7 @@ sc_omega_cor_plot<-corrplot(sc_omega_cor,
 
 #### Complex Units/Abilities
 
-As mentioned in the last section, the notable change in **ComplexAbilitiesUsed**'s confidence interval between the $lm_\Omega$ to $lm_\omega$ is likely a result of the removal of the variable **ComplexUnitsMade**. Upon reintroducing **ComplexUnitsMade** into the final model, we find the following p-values for both predictors to be insignificant. The difference in P-value is a warning that we may not distinguish the effects or vary them independently. This aligns with what is expected based on the mechanics of the game. Players must make complex units before they can use their complex abilities. 
+As mentioned when exploring the confidence intervals, the notable change in **ComplexAbilitiesUsed**'s confidence interval between the $lm_\Omega$ to $lm_\omega$ is likely a result of the removal of the variable **ComplexUnitsMade**. Upon reintroducing **ComplexUnitsMade** into the final model, we find the following p-values for both predictors to be insignificant. The difference in P-value is a warning that we may not distinguish the effects or vary them independently. This aligns with what is expected based on the mechanics of the game. Players must make complex units before they can use their complex abilities. 
 
 The way forward with the model is to continue leaving out **ComplexUnitsMade** because only making a unit in SC2 is far from a win condition. Complex units must be utilized with precision and within the right contexts to reap their full value. On the other hand, worker units reflected in the predictor **WorkerUnitsMade** are units a  player may produce and subsequently assign them to indefinite valued added work. If not interrupted by an attacking force, worker units will continue to add value to the in-game economy without additional intervention from the player as long as the resource node is still abundant.
 
@@ -377,6 +374,7 @@ Both variables will be removed from the model one at a time and then compared to
 kable(anova(sc_lm_final,sc_lm_8),digits=3,caption = "ANOVA $lm_\\omega$ and $lm_\\omega-TotalHours$")
 kable(anova(sc_lm_final,sc_lm_9),digits=3,caption = "ANOVA $lm_\\omega$ and $lm_\\omega-HoursPerWeek$")
 ```
+
 #### Revised $lm_\omega$
 
 After performing the changes for confounding variables, the final model results in the following coefficients. This model will be rummaged through more expensively with better tools for the final portion of this assignment.
@@ -390,9 +388,9 @@ kable(confint(sc_lm_final))
 
 Without using cross-validation, we can see some fundamental issues with the fitted values of each model reviewed. The predictions of the model behavior and accuracy comparable between $\Omega$ & $\omega$, so only $\omega$ will be used in the following section.
 
-The first plot is a scatterplot with the fitted values by dominant predictor APM. Some of the players are excepted to have a LeagueIndex>>10, which does not exist in sampled response. Although LeagueIndex > 7 does tease that the Grandmaster tier is an unbounded tier in terms of skill points. Overall, the continuous fitted values fail to capture the discrete nature of the response. 
+The first plot is a scatterplot with the fitted values by dominant predictor APM. Some of the players are excepted to have a LeagueIndex > 10, which does not exist in sampled response. Although LeagueIndex > 7 does tease that the Grandmaster tier is an unbounded tier in terms of skill points. Overall, the continuous fitted values fail to capture the discrete nature of the response. 
 
- The fitted values will be flattened such that when LeagueIndex > 7 will be set LeagueIndex=7, then each value will be rounded, so only integer values remain to help interpret the results of the model.
+The fitted values will be flattened such that when LeagueIndex > 7 will be set LeagueIndex=7, then each value will be rounded, so only integer values remain to help interpret the results of the model.
 
 ```{r, compact=TRUE,collapse=TRUE,echo=FALSE}
 
@@ -447,9 +445,20 @@ Finally, **APM** increases **LeagueIndex** by one per 68. It's not surprising th
 
 For the final, the logistical regression will remodel the same problem with a different set of techniques and assumptions that fit the ordinal response. The second iteration is likely to be much smoother because of this exploratory analysis's heavy leg work.
 
-\center -- End -- \center
+ -- End Midterm 2 -- 
+ 
+# Transition to the Final
 
----
+There are five things that will be completed to fulfill the final portion of this paper, they are as follows:
+- Construct a initial ordinal regression model.
+- Breifly Compare the previous model and new models power using the same predictors, because the following models analyzed may not be a subset of one another.
+- Revisit model specifications with a step wise reg focused on BIC
+- Perform diagnostics
+  - Adjust for outliers, and iterate
+  - Adjust for issues found during diagnostics, and iterate
+- Predict
+
+
 
 # Appendix
 
@@ -480,9 +489,10 @@ For the final, the logistical regression will remodel the same problem with a di
 
 ### Why Violin Plots.
 
-I decided to use Violin plots because I found with less tweaking they provided almost all the information I was looking for compared to scatter plots. Head to head a limitation of violin plots is that make it seems as though the LeagueIndex level size contains the same $n$. The histogram earlier in this analysis shows clearly that $n$ at each level of the **LeagueIndex** is not equal so choosing a tool on the basis of reiterating that point seems redundant. The benefit of Violin plots is that they provide a smoothed density plot at each **LeagueIndex** with a single point that represents the mean. This same thing could be done with scatter plots but I found it took much more staring and plot to plot variation.
+I decided to use Violin plots because I found with less tweaking they provided almost all the information I was looking for compared to scatter plots. Head to head a limitation of violin plots is that they make it seems as though the LeagueIndex level size contains the same $n$. The histogram earlier in this analysis shows clearly that $n$ at each level of the **LeagueIndex** is not equal so choosing a tool on the basis of reiterating that point seems redundant. The benefit of Violin plots is that they provide a smoothed density plot at each **LeagueIndex** with a single point that represents the mean. This same thing could be done with scatter plots but I found it took much more staring and plot to plot variation.
 
 The following is some head to head varieties plotting the data.
+
 ```{r, echo=FALSE}
 p1<-ggplot(sc,aes(x=APM,y=LeagueIndex))+ geom_point( alpha = 0.1, size = 3)+scale_fill_manual(values=cbPalette)
 p2<-ggplot(sc,aes(x=APM,y=LeagueIndex, fill=factor(LeagueIndex)))+ geom_jitter(shape=21, alpha = 0.1, size = 3)+scale_fill_manual(values=cbPalette)
@@ -497,7 +507,9 @@ p4<-VioLeagueIndex("Age")
 
 grid.arrange(p1,p2,p3,p4,ncol=2)
 ```
+
 # Code
+
 ```{r code,eval=FALSE}
 library(tidyverse)
 library(dbplyr) #piping

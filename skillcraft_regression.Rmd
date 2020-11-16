@@ -14,8 +14,11 @@ editor_options:
 ```{bash git, eval=FALSE, include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "Copy Turned In"
+git commit -m "Starting Final"
 git push
+
+#git log
+git status
 ```
 
 ```{r setup, include=FALSE}
@@ -457,6 +460,16 @@ There are five things that will be completed to fulfill the final portion of thi
   - Adjust for outliers, and iterate
   - Adjust for issues found during diagnostics, and iterate
 - Predict
+```{r, error=FALSE}
+require(foreign)
+require(ggplot2)
+require(MASS)
+require(Hmisc)
+require(reshape2)
+
+m <- polr(factor(LeagueIndex) ~ APM, data = sc, Hess=TRUE)
+summary(m)
+```
 
 
 

@@ -14,7 +14,7 @@ editor_options:
 ```{bash git, eval=FALSE, include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "Starting Final"
+git commit -m "Unfolding proportional odds model description"
 git push
 
 #git log
@@ -42,13 +42,14 @@ library(reshape2) #melt function
 #set_token("33be678eb46d4f51ac36f72218abcdd2", #"Sb3QWR8A9mN9s0XgAt5w4j0FttY84pkg")
 ```
 
-```{r midterm2, include=FALSE}
+```{r Assignement, include=FALSE}
 # Assignment Midterm 2
 
-#https://cgrudz.github.io/teaching/stat_757_2020_fall/assets/midterm_2.html
+# https://cgrudz.github.io/teaching/stat_757_2020_fall/assets/midterm_2.html
 
-#Final
-#https://cgrudz.github.io/teaching/stat_757_2020_fall/assets/final_project.html
+# Final
+
+# https://cgrudz.github.io/teaching/stat_757_2020_fall/assets/final_project.html
 ```
 # Introduction
  
@@ -408,7 +409,7 @@ p2<-ggplot(sc_lm_final, aes(x=APM, y=factor(LeagueIndex)))+geom_jitter() +geom_j
 grid.arrange(p1,p2,ncol=2)
 ```
 
-To assess the predictive accuracy of the model the flattened and rounded values fitted values are then compared to the sampled values overall providing a `r round(sum((sc$LeagueIndex==round(sc_lm_rounded$fitted.values)))/count(sc),2)*100`% accuracy. This is a very low accuracy considering 100% of the data was used to train the model. The correct % by *LeagueIndex** is plotted below accompanied by a base rate % that reflects the chance of guessing the correct **LeagueIndex** using: 
+To assess the predictive accuracy of the model the flattened and rounded values fitted values are then compared to the sampled values overall providing a `r round(sum((sc$LeagueIndex==round(sc_lm_rounded$fitted.values)))/count(sc),2)*100`% accuracy. This is a very low accuracy considering 100% of the data was used to train the model. The correct % by **LeagueIndex** is plotted below accompanied by a base rate % that reflects the chance of guessing the correct **LeagueIndex** using: 
 $$BaseRate\%=n_{LeagueIndex=i}/n_{total}$$. 
 
 ```{r,echo=FALSE,error=FALSE,warning=FALSE}
@@ -451,15 +452,13 @@ For the final, the logistical regression will remodel the same problem with a di
  -- End Midterm 2 -- 
  
 # Transition to the Final
-
+$\frac{1}{2}$
 There are five things that will be completed to fulfill the final portion of this paper, they are as follows:
-- Construct a initial ordinal regression model.
-- Breifly Compare the previous model and new models power using the same predictors, because the following models analyzed may not be a subset of one another.
-- Revisit model specifications with a step wise reg focused on BIC
-- Perform diagnostics
-  - Adjust for outliers, and iterate
-  - Adjust for issues found during diagnostics, and iterate
-- Predict
+
+## Portional Odds model
+  Construct a ordinal regression model with the same predictors as final model $lm_\omega$ of the form:
+$$log(\frac{p}{1-p})=\alpha+\beta_1x_1+\beta_2x_2...+\beta_px_p\\ vs. \\log(\frac{p_i}{1-p_i})=\alpha_i+\beta_1x_1+\beta_2x_2...+\beta_px_p$$
+Logistic regression predicts $p$,the probability a binomial response, alternatively ordinal regression predicts $p_i$ the predictors ceoffients partitioned by rank outcome $i \in LeagueIndex$. This encoding predicts the logit odds based on a set of parameters $X$. 
 ```{r, error=FALSE}
 require(foreign)
 require(ggplot2)
@@ -469,9 +468,39 @@ require(reshape2)
 
 m <- polr(factor(LeagueIndex) ~ APM, data = sc, Hess=TRUE)
 summary(m)
+
+(ctable <- coef(summary(m)))
+## calculate and store p values
+p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+
+## combined table
+(ctable <- cbind(ctable, "p value" = p))
+
+(ci <- confint(m)) # default method gives profiled CIs
+
+#https://stats.idre.ucla.edu/r/dae/ordinal-logistic-regression/
+#The intercept term shows cumulative odds
+#melt, group by , summarize
 ```
 
+## MLR vs Proportional Odds Model (shallow dive)
+- Briefly Compare the previous model and new models power using the same predictors, because the following models analyzed may not be a subset of one another.
+- Revisit model specifications with a step wise reg focused on BIC
+- Perform diagnostics
+  - Adjust for outliers, and iterate
+  - Perform diagnostics for portional odds, and iterate
+- Predict
 
+** OR **
+
+- Perform diagnostics
+  - Adjust for outliers, and iterate
+  - Perform diagnostics on the residuals, and iterate
+-  Construct a initial ordinal regression model with the same predictors as $lm_\omega$.
+- Briefly Compare the previous model and new models power using the same predictors, because the following models analyzed may not be a subset of one another.
+- Revisit model specifications with a step wise reg focused on BIC
+- Assess porional odds assumptions
+  - "One of the assumptions underlying ordinal logistic (and ordinal probit) regression is that the relationship between each pair of outcome groups is the same. In other words, ordinal logistic regression assumes that the coefficients that describe the relationship between, say, the lowest versus all higher categories of the response variable are the same as those that describe the relationship between the next lowest category and all higher categories, etc. This is called the proportional odds assumption or the parallel regression assumption. Because the relationship between all pairs of groups is the same, there is only one set of coefficients."
 
 # Appendix
 

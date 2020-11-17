@@ -550,13 +550,6 @@ p2<-ggplot(sc,aes(x=APM,y=LeagueIndex, fill=factor(LeagueIndex)))+ geom_jitter(s
 p3<-ggplot(sc,aes(x=APM,y=LeagueIndex))+ geom_jitter(alpha = 0.1, size = 3)
 p4<-VioLeagueIndex("APM")
 
-grid.arrange(p1,p2,p3,p4,ncol=2)
-p1<-ggplot(sc,aes(x=Age,y=LeagueIndex))+ geom_point( alpha = 0.1, size = 3)+scale_fill_manual(values=cbPalette)
-p2<-ggplot(sc,aes(x=Age,y=LeagueIndex, fill=factor(LeagueIndex)))+ geom_jitter(shape=21, alpha = 0.1, size = 3)+scale_fill_manual(values=cbPalette)
-p3<-ggplot(sc,aes(x=Age,y=LeagueIndex))+ geom_jitter(alpha = 0.1, size = 3)
-p4<-VioLeagueIndex("Age")
-
-grid.arrange(p1,p2,p3,p4,ncol=2)
 ```
 
 # Code

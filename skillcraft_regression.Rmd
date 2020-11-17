@@ -14,7 +14,7 @@ editor_options:
 ```{bash git, eval=FALSE, include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "Unfolding proportional odds model description"
+git commit -m "Unfolding proportional odds model description: add P-values, CI, and ceof. Adding some interpre"
 git push
 
 #git log

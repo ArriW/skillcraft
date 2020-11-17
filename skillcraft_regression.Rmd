@@ -3,8 +3,8 @@ title: "SkillCraft Multivariant Regression"
 author: "Arrington Walters"
 date: "11/4/2020"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
   word_document: default
 bibliography: ./inline/bibliography.bib
 editor_options:
@@ -14,7 +14,7 @@ editor_options:
 ```{bash git, eval=FALSE, include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "Unfolding proportional odds model description: add P-values, CI, and ceof. Adding some interpre"
+git commit -m "can i stepwise?"
 git push
 
 #git log
@@ -458,10 +458,11 @@ There are five things that will be completed to fulfill the final portion of thi
 
 ## Portional Odds model
 
-Construct a ordinal regression model with the same predictors as final model $lm_\omega$ of the form:
-$$log(\frac{p}{1-p})=\alpha+\beta_1x_1+\beta_2x_2...+\beta_px_p\\ vs. \\log(\frac{p_i}{1-p_i})=\alpha_i+\beta_1x_1+\beta_2x_2...+\beta_px_p$$
+Construct a ordinal regression model using the the ` Mass ` package and function ` polr `where $-\beta=\eta$ using the same parameters as final model $lm_\omega$ @Modern :
+$$log(\frac{p}{1-p})=\alpha+\eta_1x_1+\eta_2x_2...+\eta_px_p\\ vs. \\log(\frac{p_i}{1-p_i})=\alpha_i+\eta_1x_1+\eta_2x_2...+\eta_px_p$$
 Logistic regression predicts $p$,the probability a binomial response, alternatively ordinal regression predicts $p_i$ the predictors ceoffients partitioned by multinominal response $i \in LeagueIndex$. This encoding predicts the logit odds based on a set of parameters $X$. 
-```{r, error=FALSE}
+
+```{r, error=FALSE, echo=FALSE,collapse=TRUE}
 require(foreign)
 require(ggplot2)
 require(MASS)
@@ -478,20 +479,23 @@ ctable <- cbind(ctable, "p value" = p)
 
 ci <- exp(confint(m)) # default method gives profiled CIs
 co <-exp(coef(m))
+c<-round(cbind(ci,Nominal=co),3)
 
 kable(ctable,format = "markdown", digits = 4, caption="Ordinal Model" )
-kable(co,caption="Exponentiate Coeffiecients")
-kable(ci,caption="Exponentiate Confidence Intervals")
+kable(c,caption="Exp. Confidence Intervals")
+
 #https://stats.idre.ucla.edu/r/dae/ordinal-logistic-regression/
 #The intercept term shows cumulative odds
 #melt, group by , summarize
 ```
-To generate bias P-Values a z-test is used where the t-value is compared with the standard normal distribution. These p-values have decreasing bias as sample size increases and considering $n=$`r nrow(sc)` the bias should be reasonably diminished producing subtlety asymmetric confidence intervals.
+To generate bias P-Values a z-test is used where the t-value is compared with the standard normal distribution. These p-values have decreasing bias as sample size increases and considering $n=$`r nrow(sc)` the bias should be reasonably diminished producing subtlety asymmetric confidence intervals. 
 
-### APM 
+### APM in the ordinal model
 
-For Starcraft II players this ranked season, the odds of being ranked above 
-
+For Starcraft II players this ranked season, for everyone one unit increase in players APM the odds of being ranked plat below is decrease 3.3% holding all other variables constant.
+```{r}
+#pc<-sc%>%group_by(LeagueIndex)%>%summarize(AvgAPM=mean(APM))
+```
 ## MLR vs Proportional Odds Model (shallow dive)
 - Briefly Compare the previous model and new models power using the same predictors, because the following models analyzed may not be a subset of one another.
 - Revisit model specifications with a step wise reg focused on BIC

@@ -452,13 +452,15 @@ For the final, the logistical regression will remodel the same problem with a di
  -- End Midterm 2 -- 
  
 # Transition to the Final
-$\frac{1}{2}$
+
 There are five things that will be completed to fulfill the final portion of this paper, they are as follows:
 
+
 ## Portional Odds model
-  Construct a ordinal regression model with the same predictors as final model $lm_\omega$ of the form:
+
+Construct a ordinal regression model with the same predictors as final model $lm_\omega$ of the form:
 $$log(\frac{p}{1-p})=\alpha+\beta_1x_1+\beta_2x_2...+\beta_px_p\\ vs. \\log(\frac{p_i}{1-p_i})=\alpha_i+\beta_1x_1+\beta_2x_2...+\beta_px_p$$
-Logistic regression predicts $p$,the probability a binomial response, alternatively ordinal regression predicts $p_i$ the predictors ceoffients partitioned by rank outcome $i \in LeagueIndex$. This encoding predicts the logit odds based on a set of parameters $X$. 
+Logistic regression predicts $p$,the probability a binomial response, alternatively ordinal regression predicts $p_i$ the predictors ceoffients partitioned by multinominal response $i \in LeagueIndex$. This encoding predicts the logit odds based on a set of parameters $X$. 
 ```{r, error=FALSE}
 require(foreign)
 require(ggplot2)
@@ -466,22 +468,29 @@ require(MASS)
 require(Hmisc)
 require(reshape2)
 
-m <- polr(factor(LeagueIndex) ~ APM, data = sc, Hess=TRUE)
-summary(m)
+m <- polr(factor(LeagueIndex) ~ APM + TotalHours, data = sc, Hess=TRUE)
 
-(ctable <- coef(summary(m)))
+ctable <- coef(summary(m))
 ## calculate and store p values
 p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
-
 ## combined table
-(ctable <- cbind(ctable, "p value" = p))
+ctable <- cbind(ctable, "p value" = p)
 
-(ci <- confint(m)) # default method gives profiled CIs
+ci <- exp(confint(m)) # default method gives profiled CIs
+co <-exp(coef(m))
 
+kable(ctable,format = "markdown", digits = 4, caption="Ordinal Model" )
+kable(co,caption="Exponentiate Coeffiecients")
+kable(ci,caption="Exponentiate Confidence Intervals")
 #https://stats.idre.ucla.edu/r/dae/ordinal-logistic-regression/
 #The intercept term shows cumulative odds
 #melt, group by , summarize
 ```
+To generate bias P-Values a z-test is used where the t-value is compared with the standard normal distribution. These p-values have decreasing bias as sample size increases and considering $n=$`r nrow(sc)` the bias should be reasonably diminished producing subtlety asymmetric confidence intervals.
+
+### APM 
+
+For Starcraft II players this ranked season, the odds of being ranked above 
 
 ## MLR vs Proportional Odds Model (shallow dive)
 - Briefly Compare the previous model and new models power using the same predictors, because the following models analyzed may not be a subset of one another.

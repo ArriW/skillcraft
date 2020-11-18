@@ -14,7 +14,7 @@ editor_options:
 ```{bash git, eval=FALSE, include=FALSE}
 cd ~/STAT757/skillcraft
 git add --all
-git commit -m "Unfolding proportional odds model description: add P-values, CI, and ceof. Adding some interpre"
+git commit -m "in classnotes"
 git push
 
 #git log
@@ -455,6 +455,19 @@ For the final, the logistical regression will remodel the same problem with a di
 
 There are five things that will be completed to fulfill the final portion of this paper, they are as follows:
 
+## Perform Diagnosistics on old model
+- Start with LM plot()
+```{r}
+plot(sc_lm_final)
+```
+- Contour plot , drill down with a leave-oneout df dfbeta unsual observation in leave one out until
+- normality of the residual (without them)
+- fitted vs error (Definite trend favoring the higher observations)
+- partial residuals by each predictor Lecture Model structure and gooodness of fit and for multiple morality
+
+- 
+### Revise as needed
+### Generate a stepwise model here too...
 
 ## Portional Odds model
 
@@ -492,24 +505,17 @@ To generate bias P-Values a z-test is used where the t-value is compared with th
 
 For Starcraft II players this ranked season, the odds of being ranked above 
 
-## MLR vs Proportional Odds Model (shallow dive)
-- Briefly Compare the previous model and new models power using the same predictors, because the following models analyzed may not be a subset of one another.
-- Revisit model specifications with a step wise reg focused on BIC
-- Perform diagnostics
-  - Adjust for outliers, and iterate
-  - Perform diagnostics for portional odds, and iterate
-- Predict
-
-** OR **
+### (Maybe) Diagnositics on Proportional odds model
 
 - Perform diagnostics
-  - Adjust for outliers, and iterate
-  - Perform diagnostics on the residuals, and iterate
--  Construct a initial ordinal regression model with the same predictors as $lm_\omega$.
+- "One of the assumptions underlying ordinal logistic (and ordinal probit) regression is that the relationship between each pair of outcome groups is the same. In other words, ordinal logistic regression assumes that the coefficients that describe the relationship between, say, the lowest versus all higher categories of the response variable are the same as those that describe the relationship between the next lowest category and all higher categories, etc. This is called the proportional odds assumption or the parallel regression assumption. Because the relationship between all pairs of groups is the same, there is only one set of coefficients."
+- Adjust for outliers, and iterate
+- Perform diagnostics for portional odds, and iterate
+
+## MLR vs Proportional Odds Model 
 - Briefly Compare the previous model and new models power using the same predictors, because the following models analyzed may not be a subset of one another.
 - Revisit model specifications with a step wise reg focused on BIC
-- Assess porional odds assumptions
-  - "One of the assumptions underlying ordinal logistic (and ordinal probit) regression is that the relationship between each pair of outcome groups is the same. In other words, ordinal logistic regression assumes that the coefficients that describe the relationship between, say, the lowest versus all higher categories of the response variable are the same as those that describe the relationship between the next lowest category and all higher categories, etc. This is called the proportional odds assumption or the parallel regression assumption. Because the relationship between all pairs of groups is the same, there is only one set of coefficients."
+- Predict Power
 
 # Appendix
 

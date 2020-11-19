@@ -15,7 +15,7 @@ editor_options:
 cd ~/STAT757/skillcraft
 git add --all
 
-git commit -m "in classnotes"
+git commit -m "Starting with cook's"
 git push
 
 #git log
@@ -451,15 +451,28 @@ Finally, **APM** increases **LeagueIndex** by one per 68. It's not surprising th
 For the final, the logistical regression will remodel the same problem with a different set of techniques and assumptions that fit the ordinal response. The second iteration is likely to be much smoother because of this exploratory analysis's heavy leg work.
 
  -- End Midterm 2 -- 
- 
-# Transition to the Final
 
-There are five things that will be completed to fulfill the final portion of this paper, they are as follows:
+#Final Research Question
 
-## Perform Diagnosistics on old model
-- Start with LM plot()
+The question for the final research is aligned with the scope of the intial research question, and that is to explain what makes players highly ranked. The last effort was limited because it only dabbled in diagnostics but more importantly because the it applied a multivariant linear regression to a ordinal response. 
+
+The final modeling will return to the MLR to peform some diagnostics on $lm_\omega$. Subsequently the $lm_\omega$ will be redediated based on the findings. Additionally a stepwise MLR $lm_\circlearrowleft$ will minimize Bayesian information criterion (BIC) for explaintory purposes. The last model that will be produced will utilize the same subset of predictors.
+
+All the models will be compared how ever i can.
+
+# Perform Diagnosistics on old model
+
+Knowing that these $lm_\omega$ has been improperly to the ordinal response most of the diagnostics and related assumptions will be consistently violated regardless of transformations within MLR modeling. The expection to this would be the outliers levarage, by addressing these needs to iterate will be brought to the forefront. 
+
+After using a Cook's distance plot it is apparant with a index 2321 needs adjustment. Upon further inspection this data points seems to be another data point 
 ```{r}
-plot(sc_lm_final)
+plot(sc_lm_final,which=4)
+sc<-filter(sc,sc$TotalHours<25000)
+sc_lm_final<-lm(LeagueIndex~TotalHours+APM+UniqueHotkeys+MinimapAttacks+WorkersMade+ComplexAbilitiesUsed)
+plot(sc_lm_final,which=4)
+```
+```{r}
+summary(sc_lm_final)
 ```
 - Contour plot , drill down with a leave-oneout df dfbeta unsual observation in leave one out until
 - normality of the residual (without them)
@@ -514,6 +527,7 @@ For Starcraft II players this ranked season, for everyone one unit increase in p
 #pc<-sc%>%group_by(LeagueIndex)%>%summarize(AvgAPM=mean(APM))
 ```
 ## MLR vs Proportional Odds Model (shallow dive)
+
 - Briefly Compare the previous model and new models power using the same predictors, because the following models analyzed may not be a subset of one another.
 - Revisit model specifications with a step wise reg focused on BIC
 - Perform diagnostics
@@ -522,7 +536,6 @@ For Starcraft II players this ranked season, for everyone one unit increase in p
 - Predict
 
 ** OR **
->>>>>>> 968e2e25f0f43b0ed4ff6c0bb964e8e363c69339
 
 - Perform diagnostics
 - "One of the assumptions underlying ordinal logistic (and ordinal probit) regression is that the relationship between each pair of outcome groups is the same. In other words, ordinal logistic regression assumes that the coefficients that describe the relationship between, say, the lowest versus all higher categories of the response variable are the same as those that describe the relationship between the next lowest category and all higher categories, etc. This is called the proportional odds assumption or the parallel regression assumption. Because the relationship between all pairs of groups is the same, there is only one set of coefficients."

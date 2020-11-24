@@ -15,7 +15,7 @@ editor_options:
 cd ~/STAT757/skillcraft
 git add --all
 
-git commit -m "Starting with cook's"
+git commit -m "Starting with log transform"
 git push
 
 #git log
@@ -465,12 +465,51 @@ All the models will be compared how ever i can.
 Knowing that these $lm_\omega$ has been improperly to the ordinal response most of the diagnostics and related assumptions will be consistently violated regardless of transformations within MLR modeling. The expection to this would be the outliers levarage, by addressing these needs to iterate will be brought to the forefront. 
 
 After using a Cook's distance plot it is apparant with a index 2321 needs adjustment. Upon further inspection this data points seems to be another data point 
+
 ```{r}
-plot(sc_lm_final,which=4)
-sc<-filter(sc,sc$TotalHours<25000)
-sc_lm_final<-lm(LeagueIndex~TotalHours+APM+UniqueHotkeys+MinimapAttacks+WorkersMade+ComplexAbilitiesUsed)
+sc_lm<-lm(LeagueIndex~.-TotalHours+log(TotalHours),sc)
+sc_lm_1<-update(sc_lm,.~.-UniqueUnitsMade ,sc)
+sc_lm_2<-update(sc_lm,.~.-Age-UniqueUnitsMade)
+sc_lm_3<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade)
+sc_lm_4<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade-MinimapRightClicks)
+sc_lm_final<-update(sc_lm,.~.-Age-TotalMapExplored-UniqueUnitsMade-MinimapRightClicks-ComplexUnitsMade)
 plot(sc_lm_final,which=4)
 ```
+
+
+```{r modeltrimming,echo=FALSE}
+plot(sc_lm_final,which=4)
+
+#Filter first outlier with high leverage. 20000 (Total Hours)
+sc<-filter(sc,sc$TotalHours<25000)
+sc_lm<-lm(LeagueIndex~.,sc)
+sc_lm_1<-update(sc_lm,.~.-UniqueUnitsMade ,sc)
+sc_lm_2<-update(sc_lm,.~.-Age-UniqueUnitsMade)
+sc_lm_3<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade)
+sc_lm_4<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade-MinimapRightClicks)
+sc_lm_final<-update(sc_lm,.~.-Age-TotalMapExplored-UniqueUnitsMade-MinimapRightClicks-ComplexUnitsMade)
+plot(sc_lm_final,which=4)
+
+sc<-filter(sc,sc$TotalHours<20000)
+sc_lm<-lm(LeagueIndex~.,sc)
+sc_lm_1<-update(sc_lm,.~.-UniqueUnitsMade ,sc)
+sc_lm_2<-update(sc_lm,.~.-Age-UniqueUnitsMade)
+sc_lm_3<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade)
+sc_lm_4<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade-MinimapRightClicks)
+sc_lm_final<-update(sc_lm,.~.-Age-TotalMapExplored-UniqueUnitsMade-MinimapRightClicks-ComplexUnitsMade)
+plot(sc_lm_final,which=4)
+
+sc<-filter(sc,sc$TotalHours<18000)
+
+sc_lm<-lm(LeagueIndex~.,sc)
+sc_lm_1<-update(sc_lm,.~.-UniqueUnitsMade ,sc)
+sc_lm_2<-update(sc_lm,.~.-Age-UniqueUnitsMade)
+sc_lm_3<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade)
+sc_lm_4<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade-MinimapRightClicks)
+sc_lm_final<-update(sc_lm,.~.-Age-TotalMapExplored-UniqueUnitsMade-MinimapRightClicks-ComplexUnitsMade)
+plot(sc_lm_final,which=4)
+```
+
 ```{r}
 summary(sc_lm_final)
 ```

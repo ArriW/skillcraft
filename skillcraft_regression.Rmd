@@ -192,6 +192,7 @@ sc_cor_plot<-corrplot(sc_cor,
 ```
 
 ```{r dropconfounding, echo=FALSE}
+sc_n<-sc
 sc<-sc%>%select(!c(GameID,ActionLatency,GapBetweenPACs,NumberOfPACs,SelectByHotkeys,ActionsInPAC))
 ```
  
@@ -452,75 +453,119 @@ For the final, the logistical regression will remodel the same problem with a di
 
  -- End Midterm 2 -- 
 
-#Final Research Question
+#Plan for Final
 
-The question for the final research is aligned with the scope of the intial research question, and that is to explain what makes players highly ranked. The last effort was limited because it only dabbled in diagnostics but more importantly because the it applied a multivariant linear regression to a ordinal response. 
+The task:
+You will be expected to perform the following:
 
-The final modeling will return to the MLR to peform some diagnostics on $lm_\omega$. Subsequently the $lm_\omega$ will be redediated based on the findings. Additionally a stepwise MLR $lm_\circlearrowleft$ will minimize Bayesian information criterion (BIC) for explaintory purposes. The last model that will be produced will utilize the same subset of predictors.
+Perform diagnostic analysis of your model. You should check for our usual assumptions: evaluate the structure of the model (e.g., nonlinearity in the relationship, residual versus fitted and partial residual plots);
 
-All the models will be compared how ever i can.
+        discuss possible correlations in the errors (it goes beyond the scope of our class to estimate the covariance matrix, so a discussion of possible common correlations is sufficient);
+        constant variance of the error (residual versus fitted plots and hypothesis tests);
+        Gaussianity of the error (Q-Q plots and hypothesis tests);
+        identify outliers and evaluate for influential observations changing the fit of the model (studentized residuals, Cook’s distance).
+        -(EMAIL COLIN)(NOT INCLUDED) Compute the k-fold cross validation RMSE to evaluate a more realistic estimate of predictive performance.
+
+    Revise the model and perform remediation of the issues: (CHECK EACH OF THESE OFF IN REFERENCE TO FIRST PAPER AS NEEDED)
+        -(EMAIL COLIN)(DONE IN MIDTERM2?, what about log transform introducing 0s? Do i need to do anything more through)if reasonable to do so, handle missing data systematically with methods from class;
+        (This will be done with BIC plots )compare the model selection in the midterm with model instead based upon an information criterion method;
+        (Logit?) if reasonable to do so, consider transformation of scale of the response with e.g., Box-Cox, shifted log, logit or Fisher’s z-transformation;
+        (EMAIL COLIN if I need to redo remediation done in first part) (DONE, in Midterm2 log)if reasonable to do so, exclude outliers and re-fit the model;
+        (WHAT is general least squares)if reasonable to do so, perform generalized or weighted least squares (generalized least squares is particularly difficult in most cases, so unless you know the covariance structure of the errors already, don’t worry about estimating it or performing GLS);
+        finally, use the usual diagnostics to determine if the remediation has had an effect on the issues previously noted with using the usual assumptions.
+       (I got this covered) Not all of the above will be reasonable to perform with your data. Some of the above remediation (like outlier exclusion) depend on the other remedial steps (like variable transformation) and should be considered simultaneously. You are encouraged to iterate on this several times, but only to summarize your process on how you arrived at your final version of the model, and how (or if) it has addressed the issues noted in the diagnostics.
+   (Goodness of Fit? Past that I need to redo my Omega/omega with the addition of BIC) Compare the goodness of fit, uncertainty, explanatory and predictive power of the new model with the model selected in the midterm. The above model evaluations should follow the same guidelines and expectations of the midterm. If you have arrived at the same model, use advanced tools such as partial residual plots to discuss the structural uncertainty of the model. Expand upon the earlier analysis to include comparisons of the effects of parameters based on, e.g., change of scale or exclusion of influential observations. Discuss the differences in predictive power observed with the confidence intervals and with the cross validation RMSE.
+    Make conclusions based on the above comparison. Does it appear that there is a reasonable linear signal in the data? Do these methods perform adequately for actionable prediction or explanation purposes regarding the research question? Does it suggest that other (e.g. nonlinear) methods should be used?
+
+What to turn in:
+
+Your corresponding code and work should be included in the final appendix, section 8; I reserve the right to request a copy of the original analysis. If there isn’t sufficient documentation in the appendix and this cannot be provided by the student at request, the midterm will not receive any credit. Cases of plagiarism will be handled furthermore with respect to the policy on academic dishonesty.
+Your report should be written clearly and structured as follows:
+
+    Section 1: Introduction. Discuss the data set, your opening research question and why this question is meaningful.
+    Section 2: Summarize the work performed in the midterm, the issues encountered and your plan to address these in this final work. Discuss your (possibly) revised research question and why this is meaningful.
+    Section 3: Discuss the diagnostics of the model constructed for the midterm, what assumptions may not be satisfied, and which seem to be ``OK".
+    Section 4: Discuss your remediation steps and your process of re-selecting/ fitting/ revising the model and its variables.
+    Section 5: Compare the goodness of fit, uncertainty, predictive and explanatory power of the model when revised according to the diagnostics. How does your view of the predictive and explanatory power change as you revise the model according to the diagnostics and remediation techniques?
+    Section 6: Discuss what conclusions can be made based on this analysis. Is there a reasonable linear signal in the data? How sure can you be of the effects in this data set? What could be performed as future work?
+    Section 7: References to data sets, papers, books or other works consulted.
+    Section 8: An appendix including relevant code and work.
+
+
+
+The question for the final research is aligned with the scope of the intial research question, and that is to explain what makes players highly ranked. The last effort was limited because it adhocly reduced the span of the model using p-values, only dabbled in diagnostics, but more importantly because the it applied a multivariant linear regression to a ordinal response. 
+
+To select better combination of predictors, the final analysis once again utilizes MLR but instead in combination with stepwise regression. The stepwise regression $lm_\circlearrowleft$ provides an more exhaustive examination of the combination of predictors then the intial $lm_\omega$. With $lm_\omega$ many predictors were trimmed prior to modeling based on the concern that they may be colinear APMs thus hendering the explaintory power of the model. These predictos will be reinstated for $lm_\circlearrowleft$'s selection because the Bayesian information criterion (BIC) should account for the variance inflation and trim accordingly. Should any of these predictors survive the trimming, they will bere-examined. 
+
+Subsequently, additional diagnostics will performed iteratively with remediation as needed ^[Four iteration of prelimary diagnostics/redimation on $lm_\omega$ revealed **TotalHours** contained four points with high levearge with Cook's Distance greater than 1. To prevent this analysis from balloning due to excessive remediation a log transform on **Totalhours** will be performed prior to creating $lm_\circlearrowleft$, while $lm_\omega$ will be left the same to provide a stark constant between the intial naive appoarch and more formal model selection.].
+
+The last model $ord_\circlearrowleft$ will use ordinal regression with the same predictors as $lm_\circlearrowleft$ to provide a model fitted to the ordinal nature of the respionse while keeping selection of predictors streamline. Finally the 3 models will be compared using BIC and predictive power.
+
+? Does anyone ave 0 total hours?
+```{r logtransform ,include=FALSE}
+sc_c<-sc_n%>%mutate(TotalHours=log(TotalHours))
+```
+
+A comparision of $lm_\circlearrowleft$ and $lm_\omega$ will happen.
+
+To provide an analysis more fitted to the response, an ordinal regression will preformed using the same predictors as $lm_\circlearrowleft$ . ^[The same set of predictors will be used mainly because I lack a package to do stepwise ordinal regression.]. Finally  these models will be compared using BIC and their predictor power.
+
+# Stepwise Regression
+```{r}
+library(caret) #for easy machine learning workflow
+library(leaps) #for computing stepwise regression
+
+sc_sw<-regsubsets(LeagueIndex~.-GameID,sc_n , nvmax = 25,
+                     method = "exhaust")
+sc_sw_summary<-summary(sc_sw)
+```
+
+Regsubsets will be used to generate the stepwise model ^[The function summary() reports the best set of variables for each model size. From the output above, an asterisk #specifies that a given variable is included in the corresponding model @Stepwise.]. 
+
+Diving into the predictors provided by the stepwise regression, its clear there is a bit of a shake up concerning which predictors are selected. **ActionLatency**  instead of **APMs** seems to dominate the model selection. These two predictors need to be further explored to understand their collinearity. Compared to $lm_\omega$, **ActionLatency** made the cut after being forced out in the intial model select. **TotalHours, AssignToHotkeys, APM, and MinimapAttacks** are all common between the two models. **ComplexAbilitiesUsed** was contained in $lm_\omega$ but did not survive the 5 predictor model trimming. It is not until including 18 out of 19 predictors does  **ComplexAbilitiesUsed** make it into the model.
+
+```{r}
+plot(sc_sw_summary[['bic']])
+kable(sc_sw_summary[["outmat"]][1:5,c("ActionLatency","TotalHours",
+    "AssignToHotkeys","APM","MinimapAttacks")])
+```
+
+Choosing the best model provided by five predictors intuitatvely seemed like a good route for explaintory purposes as a "Top 5 Skills for aspiring starcraft players" sounds like a good starting point, but demishing returns concerning BIC also seems to support 5 as a reasonable cutoff.
+
+# Comparison between models
+The following uses BIC to compare the iterative ?backward model selection based on trimming the least significant p-value seen in midterm 2 and the second based an exhaustive stepwise regression for all possible size combinations.
+
+Overlap between the two series concerning BIC is not expected  because the first series, based on pvalues, had the ?5 potentially colinear variables trimmed before any modeling was conducted while the stepwise regression starts with one predictor and finishes with the inclusion of all predictors. ?another differnece is the log transforms
+```{r bicplot, echo=FALSE}
+pval_bic<-cbind(c(BIC(sc_lm),BIC(sc_lm_1),BIC(sc_lm_2),BIC(sc_lm_3),
+    BIC(sc_lm_4),BIC(sc_lm_final)),"PValue")%>%data.frame()
+pval_bic$ModelSequence <- 1:nrow(pval_bic)
+sw_bic<-cbind(sc_sw_summary[['bic']],"SW")%>%data.frame()
+sw_bic$ModelSequence<- 1:nrow(sw_bic)
+lm_bic<-rbind(sw_bic,pval_bic)
+lm_bic$X1<-as.numeric(as.character(lm_bic$X1))
+lm_bic$X1<-lm_bic$X1-min(lm_bic$X1)
+ggplot(lm_bic,aes(ModelSequence,y=X1,color=X2))+geom_point()
+```
+
+
+```{r}
+library(car)
+sc_sw_lm<-lm(LeagueIndex~ActionLatency+TotalHours+AssignToHotkeys+APM+MinimapAttacks,sc_n)
+summary(sc_sw_lm)
+vif(sc_sw_lm) # 
+cor
+```
 
 # Perform Diagnosistics on old model
 
-Knowing that these $lm_\omega$ has been improperly to the ordinal response most of the diagnostics and related assumptions will be consistently violated regardless of transformations within MLR modeling. The expection to this would be the outliers levarage, by addressing these needs to iterate will be brought to the forefront. 
+Knowing that $lm_\omega$ has been uncharecistically fitted to the ordinal response most of the diagnostics and related assumptions will be consistently violated regardless of transformations within MLR modeling. The expection to this would be the outliers levarage, by addressing these needs to iterate will be brought to the forefront.
 
-After using a Cook's distance plot it is apparant with a index 2321 needs adjustment. Upon further inspection this data points seems to be another data point 
-
-```{r}
-sc_lm<-lm(LeagueIndex~.-TotalHours+log(TotalHours),sc)
-sc_lm_1<-update(sc_lm,.~.-UniqueUnitsMade ,sc)
-sc_lm_2<-update(sc_lm,.~.-Age-UniqueUnitsMade)
-sc_lm_3<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade)
-sc_lm_4<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade-MinimapRightClicks)
-sc_lm_final<-update(sc_lm,.~.-Age-TotalMapExplored-UniqueUnitsMade-MinimapRightClicks-ComplexUnitsMade)
-plot(sc_lm_final,which=4)
-```
-
-
-```{r modeltrimming,echo=FALSE}
-plot(sc_lm_final,which=4)
-
-#Filter first outlier with high leverage. 20000 (Total Hours)
-sc<-filter(sc,sc$TotalHours<25000)
-sc_lm<-lm(LeagueIndex~.,sc)
-sc_lm_1<-update(sc_lm,.~.-UniqueUnitsMade ,sc)
-sc_lm_2<-update(sc_lm,.~.-Age-UniqueUnitsMade)
-sc_lm_3<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade)
-sc_lm_4<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade-MinimapRightClicks)
-sc_lm_final<-update(sc_lm,.~.-Age-TotalMapExplored-UniqueUnitsMade-MinimapRightClicks-ComplexUnitsMade)
-plot(sc_lm_final,which=4)
-
-sc<-filter(sc,sc$TotalHours<20000)
-sc_lm<-lm(LeagueIndex~.,sc)
-sc_lm_1<-update(sc_lm,.~.-UniqueUnitsMade ,sc)
-sc_lm_2<-update(sc_lm,.~.-Age-UniqueUnitsMade)
-sc_lm_3<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade)
-sc_lm_4<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade-MinimapRightClicks)
-sc_lm_final<-update(sc_lm,.~.-Age-TotalMapExplored-UniqueUnitsMade-MinimapRightClicks-ComplexUnitsMade)
-plot(sc_lm_final,which=4)
-
-sc<-filter(sc,sc$TotalHours<18000)
-
-sc_lm<-lm(LeagueIndex~.,sc)
-sc_lm_1<-update(sc_lm,.~.-UniqueUnitsMade ,sc)
-sc_lm_2<-update(sc_lm,.~.-Age-UniqueUnitsMade)
-sc_lm_3<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade)
-sc_lm_4<-update(sc_lm,.~.-Age-UniqueUnitsMade-ComplexUnitsMade-MinimapRightClicks)
-sc_lm_final<-update(sc_lm,.~.-Age-TotalMapExplored-UniqueUnitsMade-MinimapRightClicks-ComplexUnitsMade)
-plot(sc_lm_final,which=4)
-```
-
-```{r}
-summary(sc_lm_final)
-```
+- boxcox plot for log transform?
 - Contour plot , drill down with a leave-oneout df dfbeta unsual observation in leave one out until
 - normality of the residual (without them)
 - fitted vs error (Definite trend favoring the higher observations)
-- partial residuals by each predictor Lecture Model structure and gooodness of fit and for multiple morality
-
-- 
-### Revise as needed
-### Generate a stepwise model here too...
+- partial residuals by each predictor Lecture - (Model structure and gooodness of fit and for multiple modality)
 
 ## Portional Odds model
 
@@ -535,8 +580,11 @@ require(MASS)
 require(Hmisc)
 require(reshape2)
 
-m <- polr(factor(LeagueIndex) ~ APM + TotalHours, data = sc, Hess=TRUE)
+m <- polr(factor(LeagueIndex) ~ ActionLatency+TotalHours+AssignToHotkeys+APM+MinimapAttacks, data = sc_n, Hess=TRUE)
+BIC(m)
 
+```
+```{r}
 ctable <- coef(summary(m))
 ## calculate and store p values
 p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
@@ -557,7 +605,6 @@ kable(c,caption="Exp. Confidence Intervals")
 To generate bias P-Values a z-test is used where the t-value is compared with the standard normal distribution. These p-values have decreasing bias as sample size increases and considering $n=$`r nrow(sc)` the bias should be reasonably diminished producing subtlety asymmetric confidence intervals. 
 
 ### APM in the ordinal model
-
 
 ### (Maybe) Diagnositics on Proportional odds model
 

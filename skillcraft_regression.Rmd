@@ -15,7 +15,7 @@ editor_options:
 cd ~/STAT757/skillcraft
 git add --all
 
-git commit -m "Starting with log transform"
+git commit -m "Sedona final, almost changed everything"
 git push
 
 #git log
@@ -37,6 +37,11 @@ library(corrplot) # For correlation matrix graphic
 library(broom) #tidy lm summaries
 library(knitr) #pretty tables
 library(reshape2) #melt function
+
+#Final
+library(car) # VIF ,Final
+library(caret) #for easy machine learning workflow
+library(leaps) #for computing stepwise regression
 ```
 
 ```{r settoken, include=FALSE}
@@ -491,29 +496,24 @@ Your report should be written clearly and structured as follows:
     Section 7: References to data sets, papers, books or other works consulted.
     Section 8: An appendix including relevant code and work.
 
-
-
 The question for the final research is aligned with the scope of the intial research question, and that is to explain what makes players highly ranked. The last effort was limited because it adhocly reduced the span of the model using p-values, only dabbled in diagnostics, but more importantly because the it applied a multivariant linear regression to a ordinal response. 
 
 To select better combination of predictors, the final analysis once again utilizes MLR but instead in combination with stepwise regression. The stepwise regression $lm_\circlearrowleft$ provides an more exhaustive examination of the combination of predictors then the intial $lm_\omega$. With $lm_\omega$ many predictors were trimmed prior to modeling based on the concern that they may be colinear APMs thus hendering the explaintory power of the model. These predictos will be reinstated for $lm_\circlearrowleft$'s selection because the Bayesian information criterion (BIC) should account for the variance inflation and trim accordingly. Should any of these predictors survive the trimming, they will bere-examined. 
 
-Subsequently, additional diagnostics will performed iteratively with remediation as needed ^[Four iteration of prelimary diagnostics/redimation on $lm_\omega$ revealed **TotalHours** contained four points with high levearge with Cook's Distance greater than 1. To prevent this analysis from balloning due to excessive remediation a log transform on **Totalhours** will be performed prior to creating $lm_\circlearrowleft$, while $lm_\omega$ will be left the same to provide a stark constant between the intial naive appoarch and more formal model selection.].
+Subsequently, additional diagnostics will performed iteratively with remediation as needed ^[Four iteration of prelimary diagnostics/redimation on $lm_\omega$ revealed **TotalHours** contained four points with high levearge with Cook's Distance greater than 1. To prevent this analysis from balloning due to excessive remediation a log transform on **Totalhours** will be performed prior to creating $lm_\circlearrowleft$, while $lm_\omega$ will be left the same to provide a stark constant between the intial naive appoarch and more formal model selection. **TotalHours** does not contain any 0 values.].
 
-The last model $ord_\circlearrowleft$ will use ordinal regression with the same predictors as $lm_\circlearrowleft$ to provide a model fitted to the ordinal nature of the respionse while keeping selection of predictors streamline. Finally the 3 models will be compared using BIC and predictive power.
-
-? Does anyone ave 0 total hours?
-```{r logtransform ,include=FALSE}
-sc_c<-sc_n%>%mutate(TotalHours=log(TotalHours))
+```{r,echo=FALSE}
+sc_n<-sc_n%>%mutate(TotalHours=log(TotalHours))
 ```
 
-A comparision of $lm_\circlearrowleft$ and $lm_\omega$ will happen.
 
-To provide an analysis more fitted to the response, an ordinal regression will preformed using the same predictors as $lm_\circlearrowleft$ . ^[The same set of predictors will be used mainly because I lack a package to do stepwise ordinal regression.]. Finally  these models will be compared using BIC and their predictor power.
+The last model $ord_\circlearrowleft$ will use ordinal regression with the same predictors as $lm_\circlearrowleft$ to provide a model fitted to the ordinal nature of the respionse while keeping selection of predictors streamline [The same set of predictors will be used mainly because I lack a package to do stepwise ordinal regression]. Finally $lm_\circlearrowleft$, $lm_\omega$, and $ord_\circlearrowleft$  will be compared using BIC and predictive power.
+
 
 # Stepwise Regression
-```{r}
-library(caret) #for easy machine learning workflow
-library(leaps) #for computing stepwise regression
+
+```{r, echo=FALSE}
+
 
 sc_sw<-regsubsets(LeagueIndex~.-GameID,sc_n , nvmax = 25,
                      method = "exhaust")
@@ -524,15 +524,99 @@ Regsubsets will be used to generate the stepwise model ^[The function summary() 
 
 Diving into the predictors provided by the stepwise regression, its clear there is a bit of a shake up concerning which predictors are selected. **ActionLatency**  instead of **APMs** seems to dominate the model selection. These two predictors need to be further explored to understand their collinearity. Compared to $lm_\omega$, **ActionLatency** made the cut after being forced out in the intial model select. **TotalHours, AssignToHotkeys, APM, and MinimapAttacks** are all common between the two models. **ComplexAbilitiesUsed** was contained in $lm_\omega$ but did not survive the 5 predictor model trimming. It is not until including 18 out of 19 predictors does  **ComplexAbilitiesUsed** make it into the model.
 
-```{r}
-plot(sc_sw_summary[['bic']])
-kable(sc_sw_summary[["outmat"]][1:5,c("ActionLatency","TotalHours",
-    "AssignToHotkeys","APM","MinimapAttacks")])
+```{r, echo=FALSE}
+plot(sc_sw_summary[['bic']]-min(sc_sw_summary[['bic']]),ylab="BIC",xlab="Index (1,One Predictor Model)",main ="Stepwise Modeling BIC")
+
+sc_sw_summary[["outmat"]][1:5,c("ActionLatency","TotalHours",
+    "AssignToHotkeys","APM","MinimapAttacks")]
 ```
 
 Choosing the best model provided by five predictors intuitatvely seemed like a good route for explaintory purposes as a "Top 5 Skills for aspiring starcraft players" sounds like a good starting point, but demishing returns concerning BIC also seems to support 5 as a reasonable cutoff.
 
+# Diagonostics
+
+Knowing that $lm_\omega$ has been uncharecistically fitted to the ordinal response most of the diagnostics and related assumptions will be consistently violated regardless of transformations within MLR modeling
+
+## Confounding
+
+It was was a intial concern that **ActionLatency** and **TotalHours** would be colinear. The variance infliation factor is not very large ?How do a I interpret VIF. BIC differnce is low and corr is high? , but the size of the $Cor(ActionLatency,TotalHours)$=`r cor(sc_n$APM,sc_n$ActionLatency)` is cause for concern. 
+
+To further explore the impact of these two variables. The $update()$ function is used to remove each variable one at a time to compare the effects of dropping them respectively to the original model. 
+
+Make table to summarize ( adjusted^2 , BIC, Confidence interval) of the 3 models... The impact of dropping APMs seems weak
+```{r, echo=FALSE}
+
+```
+
+```{r, echo=FALSE}
+sc_cor<-cor(sc_n[,c("ActionLatency","APM","TotalHours","MinimapAttacks","AssignToHotkeys")],use = "complete.obs")
+sc_cor_plot<-corrplot(sc_cor,
+    tl.cex=.75,
+    tl.col='black',
+    type="lower",diag=FALSE, method="number")
+```
+
+```{r, echo=FALSE}
+
+sc_sw_lm<-lm(LeagueIndex~ActionLatency+TotalHours+AssignToHotkeys+APM+MinimapAttacks,sc_n)
+vif(sc_sw_lm)
+cor(sc_n$APM,sc_n$ActionLatency)
+summary(sc_sw_lm)
+summary(update(sc_sw_lm,.~.-APM)) 
+BIC(update(sc_sw_lm,.~.-APM))
+summary(update(sc_sw_lm,.~.-ActionLatency))
+BIC(update(sc_sw_lm,.~.-ActionLatency))
+```
+
+
+Gauss Markov:
+
+In midterm 2 tests for normality were performed on the ordinal response **LeagueIndex** and the residuals of $lm_\omega$, both were found have have nongaussian residuals. The same holds true for $lm_\circlearrowleft$. This prevents the our regression models from being the maxuimum likihood estimators and convoludes applicapations of ANOVA. The generation of an ordinal model is the most appropiate way to proceed, but to exercerise the requirements for final report the remainder of the diagnosisitcs try to address other problems concerning linear regression model assumptions.
+
+
+
+```{r, echo=FALSE}
+shapiro.test(residuals(sc_lm_final))
+hist(fitted.values(sc_lm_final))
+shapiro.test(residuals(sc_sw_lm))
+hist(fitted.values(sc_sw_lm))
+```
+
+Residuals Vs Fitted and Standardized:
+
+The Residuals vs Preictors/fitted plots reveals some odd behavior around the tails. On the left there are scarse amount of fitted values with some being outside the possible range of **LeagueIndex**. Overall the left end of the tail is biased to over estimate. On the right there are also a scarse amount of fitted values with some greater then the possibilities for **LeagueIndex** with some biase to un
+
+$lm_\omega$ fitted values have a very long right tail that places players with a **LeagueIndex** greater than Grandmaster (**LeagueIndex**=seven)  and a short left tail that does not place any player lower silver (**LeagueIndex**=2). At both tails the model is bias to grearly overestime while center quartiles tend to more subtely underestimate. Upon closer examination this bias could be driven by **TotalHours, APM, MiniMapAttacks, WorkersMade, and ComplexUnitsMade**. It might be reasonable to project that this model would suffer from nonnormal residuals even if the response was continous.
+
+```{r, echo=FALSE}
+residualPlots(sc_lm_final)
+hist(fitted(sc_lm_final))
+```
+On the otherhnad $lm_\circlearrowleft$ visually performs much better than $lm_\omega$ as the fitted vs resiudal amoothed line seems to have intercept and slope approximately 0. The log transformation performed on **TotalHours** appears to have medigated the trend between residuals and the predictor's values. **ActionLatency, AssigntoHotkeys, APM, and MinimapAttacks** have trends with their respective values and the residuals. Transformation on these predictos were considered but not taken because it would complicate their explaintory power and the transforms would do little to medigate the issues of applying a linear model to an ordinal value.
+
+```{r, echo=FALSE}
+residualPlots(sc_sw_lm)
+hist(fitted(sc_sw_lm))
+```
+
+The residuals vs ditted 
+NormalQQ:
+Residuals Vs Leverage:
+
+BoxCox
+
+```{r, echo=FALSE}
+boxCox(sc_lm_final)
+boxCox(sc_sw_lm)
+```
+
+
+```{r, echo=FALSE}
+min(fitted.values(sc_lm_final))
+```
+
 # Comparison between models
+
 The following uses BIC to compare the iterative ?backward model selection based on trimming the least significant p-value seen in midterm 2 and the second based an exhaustive stepwise regression for all possible size combinations.
 
 Overlap between the two series concerning BIC is not expected  because the first series, based on pvalues, had the ?5 potentially colinear variables trimmed before any modeling was conducted while the stepwise regression starts with one predictor and finishes with the inclusion of all predictors. ?another differnece is the log transforms
@@ -548,30 +632,13 @@ lm_bic$X1<-lm_bic$X1-min(lm_bic$X1)
 ggplot(lm_bic,aes(ModelSequence,y=X1,color=X2))+geom_point()
 ```
 
-
-```{r}
-library(car)
-sc_sw_lm<-lm(LeagueIndex~ActionLatency+TotalHours+AssignToHotkeys+APM+MinimapAttacks,sc_n)
-summary(sc_sw_lm)
-vif(sc_sw_lm) # 
-cor
-```
-
-# Perform Diagnosistics on old model
-
-Knowing that $lm_\omega$ has been uncharecistically fitted to the ordinal response most of the diagnostics and related assumptions will be consistently violated regardless of transformations within MLR modeling. The expection to this would be the outliers levarage, by addressing these needs to iterate will be brought to the forefront.
-
-- boxcox plot for log transform?
-- Contour plot , drill down with a leave-oneout df dfbeta unsual observation in leave one out until
-- normality of the residual (without them)
-- fitted vs error (Definite trend favoring the higher observations)
-- partial residuals by each predictor Lecture - (Model structure and gooodness of fit and for multiple modality)
-
 ## Portional Odds model
 
 Construct a ordinal regression model using the the ` Mass ` package and function ` polr `where $-\beta=\eta$ using the same parameters as final model $lm_\omega$ @Modern :
 $$log(\frac{p}{1-p})=\alpha+\eta_1x_1+\eta_2x_2...+\eta_px_p\\ vs. \\log(\frac{p_i}{1-p_i})=\alpha_i+\eta_1x_1+\eta_2x_2...+\eta_px_p$$
 Logistic regression predicts $p$,the probability a binomial response, alternatively ordinal regression predicts $p_i$ the predictors ceoffients partitioned by multinominal response $i \in LeagueIndex$. This encoding predicts the logit odds based on a set of parameters $X$. 
+
+For Starcraft II players this ranked season, for everyone one unit increase in players APM the odds of being ranked plat below is decrease 3.3% holding all other variables constant.
 
 ```{r, error=FALSE, echo=FALSE,collapse=TRUE}
 require(foreign)
@@ -584,7 +651,7 @@ m <- polr(factor(LeagueIndex) ~ ActionLatency+TotalHours+AssignToHotkeys+APM+Min
 BIC(m)
 
 ```
-```{r}
+```{r,eval=FALSE}
 ctable <- coef(summary(m))
 ## calculate and store p values
 p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
@@ -604,34 +671,19 @@ kable(c,caption="Exp. Confidence Intervals")
 ```
 To generate bias P-Values a z-test is used where the t-value is compared with the standard normal distribution. These p-values have decreasing bias as sample size increases and considering $n=$`r nrow(sc)` the bias should be reasonably diminished producing subtlety asymmetric confidence intervals. 
 
-### APM in the ordinal model
+# Ideas 
 
-### (Maybe) Diagnositics on Proportional odds model
-
-For Starcraft II players this ranked season, for everyone one unit increase in players APM the odds of being ranked plat below is decrease 3.3% holding all other variables constant.
-```{r}
-#pc<-sc%>%group_by(LeagueIndex)%>%summarize(AvgAPM=mean(APM))
-```
-## MLR vs Proportional Odds Model (shallow dive)
-
+- boxcox plot for log transform?
+- Contour plot , drill down with a leave-oneout df dfbeta unsual observation in leave one out until
+- normality of the residual (without them)
+- fitted vs error (Definite trend favoring the higher observations)
+- partial residuals by each predictor Lecture - (Model structure and gooodness of fit and for multiple modality)
 - Briefly Compare the previous model and new models power using the same predictors, because the following models analyzed may not be a subset of one another.
 - Revisit model specifications with a step wise reg focused on BIC
 - Perform diagnostics
   - Adjust for outliers, and iterate
   - Perform diagnostics for portional odds, and iterate
 - Predict
-
-** OR **
-
-- Perform diagnostics
-- "One of the assumptions underlying ordinal logistic (and ordinal probit) regression is that the relationship between each pair of outcome groups is the same. In other words, ordinal logistic regression assumes that the coefficients that describe the relationship between, say, the lowest versus all higher categories of the response variable are the same as those that describe the relationship between the next lowest category and all higher categories, etc. This is called the proportional odds assumption or the parallel regression assumption. Because the relationship between all pairs of groups is the same, there is only one set of coefficients."
-- Adjust for outliers, and iterate
-- Perform diagnostics for portional odds, and iterate
-
-## MLR vs Proportional Odds Model 
-- Briefly Compare the previous model and new models power using the same predictors, because the following models analyzed may not be a subset of one another.
-- Revisit model specifications with a step wise reg focused on BIC
-- Predict Power
 
 # Appendix
 

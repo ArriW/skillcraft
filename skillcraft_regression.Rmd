@@ -15,7 +15,7 @@ editor_options:
 cd ~/STAT757/skillcraft
 git add --all
 
-git commit -m "Sedona final, almost changed everything"
+git commit -m "ride home"
 git push
 
 #git log

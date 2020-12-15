@@ -1,7 +1,7 @@
 ---
-title: "SkillCraft Multivariant Regression"
+title: "SkillCraft Regression"
 author: "Arrington Walters"
-date: "11/4/2020"
+date: "12/14/2020"
 output:
   pdf_document: default
   html_document: default
@@ -81,7 +81,7 @@ The assumptions of this model's explanatory power depend on the residual error b
 
 A more suitable form of a model for this regression would be based on a Polytonomous Logistic Regression for Ordinal Response (Proportional Odds Model) @OrdinalLog. These methods will be revisited for the final portion of this analysis.
 
-# The Data Exploring
+# Data Exploration
 
 ```{r loaddata , include=FALSE}
 sc<-read_csv("~/STAT757/skillcraft/SkillCraft1_Dataset.csv")
@@ -435,9 +435,9 @@ ggplot(sc_predicted_agg,aes(x=LeagueIndex,y=value,fill=variable))+
 
 Another part of the models bias is that it does not place anyone below **LeagueIndex=** `r min(round(fitted(sc_lm)))`. The behavior of the ordinal response severely limits the predictive power of this model. The model has infinite more likelihood of predicting someone as **LeagueIndex** = 4 who is actually **LeagueIndex**=4  then predicting someone in **LeagueIndex**=1 who is actually **LeagueIndex**=1. Less severe lopsidedness can be seen through the varying **LeagueIndexs' Correct %**. Specifically, **Correct %** for **LeagueIndex** 3 to 7 perform much better than the base rate. These sign shows are the predictive power is heavily biased towards higher **LeagueIndex**
 
-## Conclusion
+# Conclusion
 
-### Research's Explanatory Power
+## Research's Explanatory Power
 
 The initial goal was to add some flavor to **APM** concerning what makes players highly ranked. Due to structure issues, this model overall performs very poorly. As a result, it needs to be kept in mind that the following predictors explain less than half the variation observed in the response.
 
@@ -453,11 +453,13 @@ It would take 1250 unique hotkeys used per second to increase mean **LeagueIndex
 
 Finally, **APM** increases **LeagueIndex** by one per 68. It's not surprising that speed seems to have a dominating effect.
 
-### Prelude to final
+## Prelude to final
 
 For the final, the logistical regression will remodel the same problem with a different set of techniques and assumptions that fit the ordinal response. The second iteration is likely to be much smoother because of this exploratory analysis's heavy leg work.
 
  -- End Midterm 2 -- 
+ 
+\newpage
 
 # Introduction To Final
 
@@ -482,7 +484,6 @@ sc_n<-sc_n%>%mutate(TotalHours=log(TotalHours))
 
 The last model $ord_\circlearrowleft$ will use ordinal regression with the same predictors as $lm_\circlearrowleft$ to provide a model fitted to the ordinal nature of the response while keeping selection of predictors streamline ^[The same set of predictors will be used mainly because I lack a package to do stepwise ordinal regression]. Finally $lm_\circlearrowleft$, $lm_\omega$, and $ord_\circlearrowleft$  will be compared using BIC and predictive power.
 
-
 # Stepwise Regression
 
 ```{r, echo=FALSE}
@@ -491,27 +492,25 @@ sc_sw<-regsubsets(LeagueIndex~.-GameID,sc_n , nvmax = 25,
 sc_sw_summary<-summary(sc_sw)
 ```
 
-
 Regsubsets will be used to generate the stepwise model ^[The function summary() reports the best set of variables for each model size. From the output above, an asterisk #specifies that a given variable is included in the corresponding model @leaps .]. 
 
-Diving into the predictors provided by the stepwise regression, its clear there is a bit of a shake up concerning which predictors are selected. **ActionLatency**  instead of **APMs** seems to dominate the model selection. These two predictors need to be further explored to understand their colinearity. Compared to $lm_\omega$, **ActionLatency** made the cut after being forced out in the initial model select. **TotalHours, AssignToHotkeys, APM, and MinimapAttacks** are all common between the two models. **ComplexAbilitiesUsed** was contained in $lm_\omega$ but did not survive the 5 predictor model trimming. It is not until including 18 out of 19 predictors does  **ComplexAbilitiesUsed** make it into the model.
+Diving into the predictors provided by the stepwise regression, it's clear there is a bit of a shake up concerning which predictors are selected. **ActionLatency**  instead of **APMs** seems to dominate the model selection. These two predictors need to be further explored to understand their colinearity. Compared to $lm_\omega$, **ActionLatency** made the cut after being forced out in the initial model selection. **TotalHours, AssignToHotkeys, APM, and MinimapAttacks** are all common between the two models. **ComplexAbilitiesUsed** was contained in $lm_\omega$ but did not survive the five predictor model trimming. It is not until including 18 out of 19 predictors does  **ComplexAbilitiesUsed** makes it into the model.
 
 ```{r, echo=FALSE}
 plot(sc_sw_summary[['bic']]-min(sc_sw_summary[['bic']]),ylab="BIC",xlab="Index(1=One Predictor Model)",main ="Stepwise Modeling BIC")
 
 kable(sc_sw_summary[["outmat"]][1:5,c("ActionLatency","TotalHours",
-    "AssignToHotkeys","APM","MinimapAttacks")])
+    "AssignToHotkeys","APM","MinimapAttacks")],label = "Significant Predcitors at 5 model sizes")
 ```
-
-Choosing the best model provided by five predictors intuitively seemed like a good route for explanatory purposes as a "Top 5 Skills for aspiring starcraft players" sounds like a good starting point, but diminishing returns concerning BIC also seems to support predictors 5 as a reasonable cutoff.
+Choosing the best model provided by five predictors intuitively seemed like a good route for explanatory purposes as a "Top 5 Skills for aspiring starcraft players" sounds like a good starting point, but diminishing returns concerning BIC also seems to support predictors five as a reasonable cutoff.
 
 # Diagonostics
 
-Knowing that $lm_\omega$ & $lm_\circlearrowleft$  has been uncharacteristically fitted to the ordinal response most of the diagnostics and related assumptions will be consistently violated regardless of transformations within MLR modeling.
+Knowing that $lm_\omega$ & $lm_\circlearrowleft$  has been uncharacteristically fitted to the ordinal response, most of the diagnostics and related assumptions will be consistently violated regardless of transformations within MLR modeling.
 
 ## Confounding
 
-It was was a initial concern that **ActionLatency** and **TotalHours** would be collinear. Plotting the correlation matrix of the predictor span of $lm_\circlearrowleft$:
+It was an initial concern that **ActionLatency** and **TotalHours** would be collinear. Plotting the correlation matrix of the predictor span of $lm_\circlearrowleft$:
 
 ```{r, echo=FALSE}
 sc_cor<-cor(sc_n[,c("ActionLatency","APM","TotalHours","MinimapAttacks","AssignToHotkeys")],use = "complete.obs")
@@ -521,41 +520,28 @@ sc_cor_plot<-corrplot(sc_cor,
     type="lower",diag=FALSE, method="number")
 ```
 
-To further explore the impact of these two variables. The `update()` function is used to remove each **APM & ActionLatency** variable one at a time to compare the effects of dropping them respectively to the original model. BIC, Max VIF, and Adjusted $R^2$ will be used to decide the which model will be best for explanatory purposes ^[An ANOVA test was performed on between each subset model and the original $lm_\circlearrowleft$.Both had significant p-values showing they have significantly different residuals, these results were not shown because of the nongaussianity of the residuals of both models] .
+To further explore the impact of these two variables. The `update()` function is used to remove each **APM & ActionLatency** variable one at a time to compare the effects of dropping them respectively to the original model. BIC, Max VIF, and Adjusted $R^2$ will be used to decide which model will be best for explanatory purposes ^[An ANOVA test was performed on between each subset model and the original $lm_\circlearrowleft$.Both had significant p-values showing they have significantly different residuals; these results were not shown because of the nongaussianity of the residuals of both models].
 
 ```{r, echo=FALSE}
-
 sc_sw_lm<-lm(LeagueIndex~ActionLatency+TotalHours+AssignToHotkeys+APM+MinimapAttacks,sc_n)
 
-kable(vif(sc_sw_lm),
-    col.names = "VIF",
-    digits = 3,
-    caption = paste("$lm_\\circlearrowleft$ VIF Table. $R^2=$",
-      round(summary(sc_sw_lm)[["adj.r.squared"]],2),
-      " $BIC=$",round(BIC(sc_sw_lm),0)
-      )
-      )
+t1<-round(vif(sc_sw_lm),2)
+t11<-c("adj-R^2"=round(summary(sc_sw_lm)[["adj.r.squared"]],2),"BIC"=round(BIC(sc_sw_lm)))
 
-kable(vif(update(sc_sw_lm,.~.-APM)),
-    col.names = "VIF",
-    digits = 3,
-    caption = paste("$lm_\\circlearrowleft-APM$ VIF Table. $R^2=$",
-      round(summary(update(sc_sw_lm,.~.-APM))[["adj.r.squared"]],2),
-      " $BIC=$",round(BIC(update(sc_sw_lm,.~.-APM)),0)
-      )
-      )
+t2<-round(vif(update(sc_sw_lm,.~.-APM)),2)
+t22<-c(round(summary(update(sc_sw_lm,.~.-APM))[["adj.r.squared"]],2),round(BIC(update(sc_sw_lm,.~.-APM))))
 
-kable(vif(update(sc_sw_lm,.~.-ActionLatency)),
-    col.names = "VIF",
-    digits = 3,
-    caption = paste("$lm_\\circlearrowleft-ActionLatency$ VIF Table. $R^2=$",
-      round(summary(update(sc_sw_lm,.~.-ActionLatency))[["adj.r.squared"]],2),
-      " $BIC=$",round(BIC(update(sc_sw_lm,.~.-ActionLatency)),0)
-      )
-      )
+t3<-round(vif(update(sc_sw_lm,.~.-ActionLatency)),2)
+t33=c(round(summary(update(sc_sw_lm,.~.-ActionLatency))[["adj.r.squared"]],2),round(BIC(update(sc_sw_lm,.~.-ActionLatency)),0))
+kable(data.frame(list(t11,t22,t33)),col.names = c("Base","w/o APM","w/o Action"),label = "BIC and R^2 of Update Models")
 ```
 
-This comparison makes it clear that the effects are dropping APM are less severe on the models overall predictive power also are more effective for reducing the VIF. **APM** is has been a clear front runner of predict power until this point so some additional diagnostics will be performed before judging that it is fair to remove **APM**. The additional diagnostic will take the form of a linear model `lm(ActionLatency~.)` to pry out additional insight about the colinearity using VIF. The VIF of the two models `lm(ActionLatency~.)` and `lm(ActionLatency~.-APM)` are plotted to show what the inclusion of **APM** does.
+```{r, echo=FALSE}
+knitr::kable(list(t1, t2,t3),
+    col.names = "VIF",label = "Update Models VIF")
+```
+
+This comparison clarifies that the effects of dropping APM are less severe on the models' overall predictive power and are more useful for reducing VIF. **APM** has been a clear front runner of predict power until this point, so some additional diagnostics will be performed before judging that it is fair to remove **APM**. The other diagnostic will take the form of a linear model `lm(ActionLatency~.)` to pry out additional insight about the colinearity using VIF. The VIF of the two models `lm(ActionLatency~.)` and `lm(ActionLatency~.-APM)` are plotted to show the inclusion of **APM** does.
 
 ```{r , echo=FALSE}
 lm_al<-lm(ActionLatency~.-GameID,sc_n)
@@ -568,11 +554,11 @@ ggplot(lm_al_vif,aes(x=reorder(row.names(lm_al_vif),-1*as.numeric(VIF)),y=as.num
    geom_bar(stat="identity", width=.5, position = "dodge")+theme_classic()+ylab("VIF")+xlab("Predictor")+ggtitle("VIF When Predicting ActionLatency")+ theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
 
-The effects of APM clearly muddle the the usability of other predictors. **APM** provided a starting point for what makes Starcraft II players highly ranked, but in attempts to expand the description of what makes players good **APM** clearly stands in the way of the possibly more subtle predictors. The model will be remediated to force out APMs.
+The effects of **APM** muddles the usability of other predictors. **APM** provided a starting point for what makes Starcraft II players highly ranked. Still, in attempts to expand the description of what makes players proficient, **APM** stands in the way of the possibly more subtle predictors. The model will be remediated to force out APMs.
 
 ## Stepwise Remediation
 
-Reiterating the stepwise model selection process used previously while forcing out **APM**, the five predictor variable returned this time were **ActionLatency, TotalHours, AssigntoHotkeys, SelectByHotkeys, and MinimapAttacks**. Where **SelectByHotkeys** took the the place of **APM**. The BIC of this model fall slightly above that that included both **APM & ActionLatency** but below the models that dropped either. Subsequently the same steps were performed for colinearity and the remediation of forcing out **APM** was effective for reducing the overall potential for confoundance.
+Reiterating the stepwise model selection process used previously while forcing out **APM**, the five predictor variable returned this time were **ActionLatency, TotalHours, AssigntoHotkeys, SelectByHotkeys, and MinimapAttacks** where **SelectByHotkeys** took the place of **APM**. The BIC of this model falls slightly above that included both **APM & ActionLatency** but below the models that dropped either. Subsequently, the same steps were performed for colinearity, and the remediation of forcing out **APM** was effective for reducing the overall potential for confounding.
 
 ```{r,echo=FALSE}
 sc_sw<-regsubsets(LeagueIndex~.-GameID,sc_n , nvmax = 25,
@@ -587,18 +573,10 @@ kable(vif(sc_sw_lm),
       round(summary(sc_sw_lm)[["adj.r.squared"]],2),
       " $BIC=$",round(BIC(sc_sw_lm)),0)
       )
-
-sc_cor<-cor(sc_n[,c("ActionLatency","SelectByHotkeys","TotalHours","MinimapAttacks","AssignToHotkeys")],use = "complete.obs")
-sc_cor_plot<-corrplot(sc_cor,
-    tl.cex=.75,
-    tl.col='black',
-    type="lower",diag=FALSE, method="number")
 ```
+## Gauss Markov
 
-
-## Gauss Markov:
-
-In midterm 2 Shapiro-Wilks tests for normality were performed on the ordinal response **LeagueIndex** and the residuals of $lm_\omega$, both were found have have nongaussian residuals. The same holds true for $lm_\circlearrowleft$. This prevents the our regression models from being the maximum likelihood estimators and prevents the application of ANOVA. The following plots show the distribution of actual LeagueIndexs and the fitted values from our two models. Density plots were chosen instead of histograms in this situation because although the actual **LeagueIndex** are ordinal the fitted values are continuous so this helps with the comparability.
+In midterm 2, Shapiro-Wilks tests for normality were performed on the ordinal response **LeagueIndex** and the residuals of $lm_\omega$; both were found to have nongaussian residuals. The same holds for $lm_\circlearrowleft$. This prevents our regression models from being the maximum likelihood estimators and prevents the application of ANOVA. The following plots show the distribution of actual LeagueIndexs and the fitted values from our two models. Density plots were chosen instead of histograms because although the actual **LeagueIndex** is ordinal, the fitted values are continuous, which helps with the comparability.
 
 ```{r, echo=FALSE}
 lm_freqs<-data.frame(rbind(
@@ -609,21 +587,25 @@ cbind(sc_n$LeagueIndex,"act.")
 
 colnames(lm_freqs)<-c("LeagueIndex","Model")
 
-ggplot(lm_freqs, aes(x=as.numeric(LeagueIndex), fill=Model)) + geom_density(alpha=0.2)+xlab("LeagueIndex")
+ggplot(lm_freqs, aes(x=as.numeric(LeagueIndex), fill=Model)) + geom_density(alpha=0.2)+xlab("LeagueIndex")+ggtitle("LeagueIndex Density Plots: Models Vs Act")
 ```
-The generation of an ordinal model is the most appropriate way to proceed, but to exercise the requirements for final report the remainder of the diagnostics try to address other problems concerning linear regression model assumptions.
+The generation of an ordinal model is the most appropriate way to proceed but to exercise the final report's requirements, the remainder of the diagnostics tries to address other problems concerning linear regression model assumptions.
 
-## Residuals Vs Fitted and Standardized:
+## Residuals Vs. Fitted and Standardized:
 
-The Residuals vs Predictors/fitted plots reveals some odd behavior around the tails. Concerning the Residuals Vs Fitted Values, on the left there are sparse amount of fitted values with some being outside the possible range of **LeagueIndex**. Overall the left end of the tail is biased to over estimate. On the right there are also a sparse amount of fitted values with some greater then the possibilities for **LeagueIndex** with some bias to overestimate
+The Residuals vs. Predictors/fitted plots reveals some odd behavior around the tails. Concerning the Residuals Vs. Fitted Values, on the left, there are a sparse amount of fitted values with some being outside the possible range of **LeagueIndex**. Overall the left end of the tail is biased to overestimate. On the right, there are also a sparse amount of fitted values with some greater than the possibilities for **LeagueIndex**. The right hand also has some bias to overestimate.
 
-$lm_\omega$ fitted values have a very long right tail that places players with a **LeagueIndex** greater than Grandmaster (**LeagueIndex**=seven) and a short left tail that does not place any player lower silver (**LeagueIndex**=2). At both tails the model is bias to greatly overestimate while center quartiles tend to more subtly underestimate. Upon closer examination this bias could be driven by **TotalHours, APM, MiniMapAttacks, WorkersMade, and ComplexUnitsMade**. It might be reasonable to project that this model would suffer from nonnormal residuals even if the response was continuous.
+$lm_\omega$ fitted values have a very long right tail that places players with a **LeagueIndex** greater than Grandmaster (**LeagueIndex**=seven) and a short left tail that does not identify any player lower silver (**LeagueIndex**=2). The model is biased to greatly overestimate at both tails, while center quartiles tend to underestimate more subtly. Upon closer examination, this bias could be driven by **TotalHours, APM, MiniMapAttacks, WorkersMade, and ComplexUnitsMade**. It might be reasonable to project that this model would suffer from nonnormal residuals even if the response were continuous.
+
+**$lm_\omega$ Residual Plots**
 
 ```{r, echo=FALSE}
 residualPlots(sc_lm_final,tests=FALSE)
 ```
 
-On the other hand $lm_\circlearrowleft$ visually performs much better than $lm_\omega$ as the fitted vs residual smoothed line seems to have intercept and slope approximately 0. The log transformation performed on **TotalHours** appears to have mitigated the trend between residuals and the predictor's values. **ActionLatency, AssigntoHotkeys, APM, and MinimapAttacks** have trends with their respective values and the residuals. Transformation on these predictors were considered but not taken because it would complicate their explanatory power and the transforms would do little to mitigate the issues of applying a linear model to an ordinal value.
+On the other hand, $lm_\circlearrowleft$ visually performs much better than $lm_\omega$ as the fitted vs. residual smoothed line seems to have an intercept and slope approximately 0. The log transformation performed on **TotalHours** appears to have mitigated the trend between residuals and the predictor's values. **ActionLatency, AssigntoHotkeys, APM, and MinimapAttacks** have trends with their respective values and the residuals. Transformation on these predictors was considered but not taken because it would complicate their explanatory power. The transforms would do little to mitigate the issues of applying a linear model to an ordinal value.
+
+**$lm_\circlearrowleft$ Residual Plots**
 
 ```{r, echo=FALSE}
 residualPlots(sc_sw_lm,tests=FALSE)
@@ -631,7 +613,7 @@ residualPlots(sc_sw_lm,tests=FALSE)
 
 ## Cook's Distance
 
-When plotting the cook's distance for $lm_\omega$ initially three points have data points with large cook's distance. As previously mentioned in the footnotes some preemptive diagnostics were performed on $lm_\omega$ and the high leverage outliars discovered stem from **TotalHours**, thus a log transform was performed prior to creating $lm_\circlearrowleft$ to sidestep this issue. Based on $lm_\circlearrowleft$ Cook's Distance plot no additional remediation will be made for this model.
+When plotting the cook's distance for $lm_\omega$ initially, three points have data points with large cook's distance. As previously mentioned in the footnotes, some preemptive diagnostics were performed on $lm_\omega$, and the high leverage outliers discovered stem from **TotalHours**. Thus a log transform was completed before creating $lm_\circlearrowleft$ to sidestep this issue. Based on $lm_\circlearrowleft$ Cook's Distance plot, no additional remediation will be made for this model.
 
 ```{r, echo=FALSE}
 plot(sc_lm_final,which = 4)
@@ -639,7 +621,7 @@ plot(sc_lm_final,which = 4)
 
 ## BoxCox
 
-Transformations of the response would hamper the explanatory power of this analysis, but as an exercise the following uses Box-Cox Plot (for $lm_\circlearrowleft$) to explore if any transformations of the response would be useful. From the following we can see the lambda value fall slightly above 1 thus no transformation of the response is encouraged. This is persistent between both models.
+Transformations of the response would hamper the explanatory power of this analysis. As an exercise, the following uses Box-Cox Plot (for $lm_\circlearrowleft$) to explore if any transformations of the response would be useful. From the following, we can see the lambda value fall slightly above one; thus no transformation of the response is encouraged. This is persistent between both models.
 
 ```{r, echo=FALSE}
 boxCox(sc_sw_lm)
@@ -655,20 +637,28 @@ To construct a ordinal regression model using the the `ordinal` package and func
 
 $$log(\frac{p}{1-p})=\alpha+\beta_1x_1+\beta_2x_2...+\beta_px_p\\ vs. \\log(\frac{p_i}{1-p_i})=\alpha_i+\beta_1x_1+\beta_2x_2...+\beta_px_p$$
 
-Logistic regression predicts $p$,the probability of a binomial response, alternatively ordinal regression predicts $p_i$ the predictors coefficient partitioned by  response $i \in LeagueIndex$. This encoding predicts the logit odds based on a set of parameters $X$. For ordinal regression to be applied appropriately the parallel slopes assumption needs to hold. Validating that it does is far outside the scope of this course, so subsequent diagnostics will not be performed on this model. 
+Logistic regression predicts $p$,the probability of a binomial response, alternatively ordinal regression predicts $p_i$ the predictors coefficient partitioned by  response $i \in LeagueIndex$. This encoding predicts the logit odds based on a set of parameters $X$. For ordinal regression to be applied appropriately, the parallel slopes assumption needs to hold. Validating that it does is far outside the scope of this course, so subsequent diagnostics will not be performed on this model. 
 
-Using the predict function returns the likelihood estimates for bank for each player, we can use the `type=class` so the turn to mimic a fitted value for each of data points. We can see that the fitted values of this model are much more evenly distributed across each of the 7 league indexes while having a favor for **LeagueIndex** 1. Further more we can see that the BIC is lower then both of the previous models.
+Before using ordinal regression, the dataset will be rescaled using `sc_ord<-data.frame(scale(sc))` to make interpretability easier and to prevent a numerical issue like enormous eigenvalues.
 
-```{r, echo=FALSE,warning=FALSE}
-m <- clm(factor(LeagueIndex) ~ ActionLatency+TotalHours+AssignToHotkeys+SelectByHotkeys+MinimapAttacks, data = sc_n, na.action = na.omit)
-hist(as.numeric(unlist(predict(m,sc_n,type="class"))),main = paste("Fitted Values of Proportional Odds Model BIC=",round(BIC(m))),nclass = 8,xlab = "LeagueIndex")
+Using the predict function returns the likelihood estimates for rank for each player, we can use the `type=class` to find a fitted value for the data points. We can see that this model's fitted values are much more evenly distributed across each of the seven league indexes while having a favor for **LeagueIndex** 1. Furthermore, we can see that the BIC is lower than both of the previous models.
 
-m1 <- clm(factor(LeagueIndex) ~ ActionLatency, data = sc_n, na.action = na.omit)
-m2 <- clm(factor(LeagueIndex) ~ ActionLatency+TotalHours, data = sc_n, na.action = na.omit)
-m3 <- clm(factor(LeagueIndex) ~ ActionLatency+TotalHours+AssignToHotkeys, data = sc_n, na.action = na.omit)
-m4 <- clm(factor(LeagueIndex) ~ ActionLatency+TotalHours+AssignToHotkeys+SelectByHotkeys, data = sc_n, na.action = na.omit)
-m5 <- clm(factor(LeagueIndex) ~ ActionLatency+TotalHours+AssignToHotkeys+SelectByHotkeys+MinimapAttacks, data = sc_n, na.action = na.omit)
+```{r, echo=FALSE,warnings=FALSE}
+sc_ord<-data.frame(scale(sc_n))
 
+m <- clm(factor(LeagueIndex) ~ ActionLatency+TotalHours+AssignToHotkeys+SelectByHotkeys+MinimapAttacks, data = sc_ord, na.action = na.omit)
+hist(as.numeric(unlist(predict(m,sc_ord,type="class"))),main = paste("Fitted Values of Proportional Odds Model BIC=",round(BIC(m))),nclass = 8,xlab = "LeagueIndex")
+
+m1 <- clm(factor(LeagueIndex) ~ ActionLatency, data = sc_ord, na.action = na.omit)
+m2 <- clm(factor(LeagueIndex) ~ ActionLatency+TotalHours, data = sc_ord ,na.action = na.omit)
+m3 <- clm(factor(LeagueIndex) ~ ActionLatency+TotalHours+AssignToHotkeys, data = sc_ord, na.action = na.omit)
+m4 <- clm(factor(LeagueIndex) ~ ActionLatency+TotalHours+AssignToHotkeys+SelectByHotkeys, data = sc_ord, na.action = na.omit)
+m5 <- clm(factor(LeagueIndex) ~ ActionLatency+TotalHours+AssignToHotkeys+SelectByHotkeys+MinimapAttacks, data = sc_ord, na.action = na.omit)
+
+```
+
+
+```{r, echo=FALSE}
 sw1 <- lm(LeagueIndex ~ ActionLatency, data = sc_n, na.action = na.omit)
 sw2 <- lm(LeagueIndex  ~ ActionLatency+TotalHours, data = sc_n, na.action = na.omit)
 sw3 <- lm(LeagueIndex  ~ ActionLatency+TotalHours+AssignToHotkeys, data = sc_n, na.action = na.omit)
@@ -678,7 +668,7 @@ sw5 <- lm(LeagueIndex  ~ ActionLatency+TotalHours+AssignToHotkeys+SelectByHotkey
 
 # Comparison between models
 
-The following uses BIC to compare the iteratively selected models based on trimming the least significant p-value seen in midterm 2 , the exhaustive stepwise regression for all possible size combinations, and the proportional Odds model parallel the predictor selection from stepwise. The starting point for the $lm_\omega$ is all predictors while the latter two $lm_\circlearrowleft$ & $ord_\circlearrowleft$ start with one predictor and increase in model size over subsequent iterations. Overlap between the two MLR models concerning BIC is not expected because the first series, based on pvalues, had the many potentially colinear variables trimmed before any modeling was conducted while the stepwise regression starts with one predictor and finishes with the inclusion of all predictors. Another difference is the log transform on **TotalHours**.
+The following uses BIC to compare the iteratively selected models based on trimming the least significant p-value seen in midterm 2, the exhaustive stepwise regression for all possible size combinations, and the Proportional Odds model parallel the predictor selection from stepwise. The starting point for the $lm_\omega$ is all predictors while the latter two $lm_\circlearrowleft$ & $ord_\circlearrowleft$ start with one predictor and increase in model size over subsequent iterations. Overlap between the two MLR models concerning BIC is not expected because the first series, based on pvalues, had the many potentially colinear variables trimmed before any modeling was conducted, while the stepwise regression starts with one predictor and finishes with the inclusion of all predictors. Another difference is the log transform on **TotalHours**.
 
 ```{r bicplot, echo=FALSE}
 pval_bic<-cbind(c(BIC(sc_lm),BIC(sc_lm_1),BIC(sc_lm_2),BIC(sc_lm_3),
@@ -698,11 +688,16 @@ ggplot(lm_bic,aes(ModelSequence,y=X1,color=X2))+ geom_point()+
   geom_smooth(method=lm, se=FALSE)+ylab("BIC-Min(BIC)")+theme_classic()
 ```
 
-From this plot we can see that the ordinal models provide the min BIC in all comparable instances. This was expected because the ordinal model is fitted to the ordinal response. 
+We can see that the ordinal models provide the min BIC in all comparable instances from this plot. This was expected because the ordinal model is fitted to the ordinal response. 
 
-# Goodness of fit
+## Goodness of fit
 
-Using the same methods to round and flatten as seen in midterm 2 $lm_\circlearrowleft$ was used to produce predictions. A notable improvement over $lm_\omega$ is that this model actual predicts players with **LeagueIndex** less than 2. The overall model accuracy increased by 5% from 34% to 39%.
+Using the same methods to round and flatten as seen in midterm 2 $lm_\circlearrowleft$ was used to produce predictions. 
+
+The correct % by **LeagueIndex** is plotted below accompanied by a base rate % that reflects the chance of guessing the correct **LeagueIndex** using: 
+$$BaseRate\%=n_{LeagueIndex=i}/n_{total}$$.
+
+A notable improvement over $lm_\omega$ is that this model predicts players with **LeagueIndex** less than 2. The overall model accuracy increased by 5%, from 34% to 39%.
 
 ```{r, compact=TRUE,collapse=TRUE,echo=FALSE}
 sc_sw_lm_rounded<-sc_sw_lm
@@ -721,9 +716,11 @@ sc_sw_predicted_agg<-sc_sw_predicted%>%group_by(LeagueIndex)%>%
 ggplot(sc_sw_predicted_agg,aes(x=LeagueIndex,y=value,fill=variable))+
    geom_bar(stat="identity", width=.5, position = "dodge")+theme_classic()+ylab("Correct %")+ggtitle(paste("Stepwise Regression Pseudo Confusion Matrix, Acc",round(sum((sc_n$LeagueIndex==round(sc_sw_lm_rounded$fitted.values)))/count(sc),2)*100,"%"))
 ```
+
 On the other hand $ord_\circlearrowleft$ performs dramatically worse with an accuracy of 15%. This may have to do with my preparation of the model or use of `predict(m,sc_n,type="class")` to obtain the fitted values.
+
 ```{r, echo=FALSE}
-sc_ord_predicted<-data.frame("LeagueIndex"=sc_n$LeagueIndex,"FlattenFitted"=as.numeric(unlist(predict(m,sc_n,type="class"))))
+sc_ord_predicted<-data.frame("LeagueIndex"=sc_n$LeagueIndex,"FlattenFitted"=as.numeric(unlist(predict(m,sc_ord,type="class"))))
 sc_ord_predicted$correct<-sc_ord_predicted$LeagueIndex==sc_ord_predicted$FlattenFitted
 sc_ord_predicted_agg<-sc_ord_predicted%>%group_by(LeagueIndex)%>%
   add_tally()%>%summarise(correct_perc=sum(correct)/max(n),incorrect_perc=1-sum(correct)/max(n),n=max(n))%>%mutate(baserate=n/3317)%>%select(LeagueIndex,correct_perc,baserate)%>%
@@ -734,19 +731,33 @@ ggplot(sc_ord_predicted_agg,aes(x=LeagueIndex,y=value,fill=variable))+
 
 ```
 
-# Explanatory Power
+## Explanatory Power
 
-One model is the obvious choice to be used for explanatory purposes and that is $lm_\circlearrowleft$. $lm_\omega$ is limited BIC because the lack of rigor in terms of selecting predictors and $ord_\circlearrowleft$ has some major issues I am not equipped to address. Between the last explanation of $lm_\omega$ and $lm_\circlearrowleft$ only some of the predictors have switched.
+One model is the obvious choice to be used for explanatory purposes, and that is $lm_\circlearrowleft$. $lm_\omega$ has relatively sub-optimal BIC because of the lack of rigor in selecting predictors, and $ord_\circlearrowleft$ has some major issues I am not equipped to address. Between the last explanation of $lm_\omega$ and $lm_\circlearrowleft$, only some of the predictors have switched.
 
-**APM** of the predictors removed from the model this was by far the most significant. **APM** colinearity with the other variables was too great to be included in the model. This remediation provides the model with a lot more certainty because the remaining predictors have much less covariance reflected in the measure of BIC. **ActionLatency** seems to have usurped **APM** because it manages to capture quickness while remaining much more orthogonal to the other predictors. **ActionLatency** describes the average delay after moving the players screen before taking the first action. A player with high **ActionLatency** would move their screen to a new focus and rapidly take action. This does not necessarily imply they are constantly moving their screen. I think this is a good reflection of the magnitude of a players intent. Players who are unsure how to dynamic react scenario's may switch frames, pause and digest the situation, and then react accordingly. Players who are confident in their play while minimize this time by knowing what to expect from the opponent or because of their ability to understand battle states from their minimap prior to switching their focus and taking action. This dicussion also highlights another persistent predictor and that is **MiniMapAttacks**, thorougly dicussed in midterm 2, **MiniMapAttacks** reflects the amount of attacks the player takes on their minimap without the need of switching their main focus. Both high **MiniMapAttacks** and low **ActionLatency** may be sign of players becoming less dependent on visually digesting the battlestates before reacting. 
+**Total Hours** persisted between models, although the model at hand uses a log transformation. The difference between the partial residual plots with and without a log transformation seems to indicate $log(TotalHours)$ is a much better fit for this modeling. Although earning enough hours to move on a log scale is a sizable increase from its non-log counterpart, this is overall an excellent sign for aspiring Starcraft II players. Most crafts seem to be largely about the time put into them; Starcraft II seems to be no different. Although people may be born "naturals," it appears that it is more commonly earn through time invested.
 
-**UniqueHotKeys** also did not make it into the final model, **AssignToHotkeys** persisted between the two models, and **SelectByHotkey** was a new addition. This is quite a interesting change. A head to head comparison between these switches is not completely appropriate without additional testing, but this makes some good sense when viewed within the context of a match. **UniqueHotKeys** based on its definition reflects the overall unique usage of the keyboard combinations per unit of time while the other. **AssignToHotkeys** considers the rate as which the player assigns unit or building groupings. A player for example may assign unit A and unit B to hotkey 1, and subsequently overwrite that assignment with unit C later. From the  **UniqueHotKeys** perspective it would look like this player only using one type of action per unit of time instead of reflecting the underline dynamics of the selection change. For this reason it does seem like better encouragement to tell a player to increase their **AssignToHotkeys** instead of **UniqueHotKeys**. **SelectByHotkey** when used in tandem and may reflect **AssignToHotkeys** assignments actual usage.
+Of the predictors removed from the model, **APM** was the most notable. **APM** colinearity with the other variables was too great to be included in the model. The remediation that removed **APM** provided the model with a lot more certainty because the remaining predictors have much less covariance reflected in BIC's measure. **ActionLatency** seems to have usurped **APM** because it manages to capture an aspect of the quickness while remaining much more orthogonal to the other predictors. This measurement has an entire analysis behind deciding what justifies a screen-fixation based on Salvucci & Goldberg (2000) dispersion-threshold algorithm, which far exceeds the scope of this analysis @UCI. In my own words, **ActionLatency** describes the average time delay after the player's screen moves until taking the first action is taken.  
 
-**WorkersMade and ComplexAbilitiesUsed** also did not make it into $lm_\circlearrowleft$ when using 5 predictors. None of the variables that made it into the final model seem like a direct replacement, so my review in midterm 2 still seems appreciate they are just likely less powerful in terms of explanation when compared to the newly introduced predictors.
+A player with high **ActionLatency** would move their screen to a new focus and rapidly take action. This does not necessarily imply anything about the intervals they move their screen. I think this is a fair reflection of the magnitude of a player's intent. Players who are unsure how to react to scenarios dynamically may switch frames, pause and digest the situation, and respond accordingly. Players who are confident in their play may minimize this time by knowing what to expect from the opponent, because of their ability to understand battle states from their minimap prior to switching their focus and taking action, or because they minimize reliance on clickable buttons that are part of the GUI by instead using hotkeys to take action which is generally a faster mechanism to trigger. This discussion also highlights another persistent predictor, and that is **MiniMapAttacks**, thoroughly discussed in midterm 2;** MiniMapAttacks** reflects the number of attacks the player takes on their minimap without the need of switching their primary focus. Both high **MiniMapAttacks** and low **ActionLatency** maybe sign of players becoming less dependent on visually digesting the battle states before reacting. Subjectively, I think this is a very cool idea and a teachable play style. 
+
+**UniqueHotKeys** also did not make it into the final model, **AssignToHotkeys** persisted between the two models, and **SelectByHotkey** was a new addition. This is quite an interesting change. A head-to-head comparison between these switches is not completely appropriate without the formation of many additional models. Still, within the context of a match, it's quite reasonable to theorize their differences. **UniqueHotKeys**, based on its definition, reflects the overall unique usage of the keyboard combinations per unit of time. **AssignToHotkeys** considers the rate at which the player assigns unit or building groupings. For example, a player may assign unit A and unit B to hotkey keyboard button #1. Subsequently, a player can overwrite keyboard button #1 to select individually unit C or add to the original hotkey group. From the  **UniqueHotKeys** perspective, it would look like this player only using one type of action per unit of time instead of reflecting the underline dynamics of the selection change. For this reason, it does seem like better encouragement to tell a player to increase their **AssignToHotkeys** instead of **UniqueHotKeys**. **SelectByHotkey** when used in tandem and may reflect **AssignToHotkeys** assignments actual usage. 
+
+**WorkersMade and ComplexAbilitiesUsed** also did not make it into $lm_\circlearrowleft$ when using five predictors. None of the variables that made it into the final model seem like a direct replacement, so my midterm two reviews still seem appropriate. Both predictors are less potent in terms of explanation when compared to the newly introduced predictors.
 
 # Conclusion
 
+With this analysis, in many ways, I bit off more than I could chew. Choosing an ordinal response for this analysis was a daunting endeavor based on the material we ended up covering. Nevertheless, I think the experience was very successful. The linear regression assumptions were violated; therefore, bias was built into the model; the insights gained were still a tremendous help in weighing what predictors were more impactful for an explanation. I would not attempt to predict with using any of these models unless I got the ordinal model up in the running. Still, I am confident to offer the following to aspiring Starcraft II players:
 
++ 1 Practice Makes Perfect  - Players who invest time in the game tend to a higher rank. To make that time worthwhile, try starting with the remaining tips as starting points.
++ 2 Be Quick - Throughout a match, there is a real sense of urgency. It is essential to keep a plan in mind and be ready to act. It may be better for players to take suboptimal immediate action rather than spending a lot of time considering options. If a player feels like their maneuver set is limited, it may be more appropriate to consider alternatives when watching match replays instead of midmatch.
++ 3   When precision isn't required to use your minimap to gather information and to command your forces, the habits you form and the time you save may win the match!
++ 4 Whenever possible, assign your most-used units and buildings to hotkeys.
++ 5 Begin using the hotkeys as the default selection method.
+
+Focus on these things and the APMS will come.
+
+\newpage
 
 # Appendix
 
@@ -774,19 +785,6 @@ One model is the obvious choice to be used for explanatory purposes and that is 
 18. UniqueUnitsMade: Unique unites made per timestamp (continuous)
 19. ComplexUnitsMade: Number of ghosts, infestors, and high templars trained per timestamp (continuous)
 20. ComplexAbilitiesUsed: Abilities requiring specific targeting instructions used per timestamp (continuous)
-
-### Why Violin Plots.
-
-I decided to use Violin plots because I found with less tweaking they provided almost all the information I was looking for compared to scatter plots. Head to head a limitation of violin plots is that they make it seems as though the LeagueIndex level size contains the same $n$. The histogram earlier in this analysis shows clearly that $n$ at each level of the **LeagueIndex** is not equal so choosing a tool on the basis of reiterating that point seems redundant. The benefit of Violin plots is that they provide a smoothed density plot at each **LeagueIndex** with a single point that represents the mean. This same thing could be done with scatter plots but I found it took much more staring and plot to plot variation.
-
-The following is some head to head varieties plotting the data.
-
-```{r, echo=FALSE}
-p1<-ggplot(sc,aes(x=APM,y=LeagueIndex))+ geom_point( alpha = 0.1, size = 3)+scale_fill_manual(values=cbPalette)
-p2<-ggplot(sc,aes(x=APM,y=LeagueIndex, fill=factor(LeagueIndex)))+ geom_jitter(shape=21, alpha = 0.1, size = 3)+scale_fill_manual(values=cbPalette)
-p3<-ggplot(sc,aes(x=APM,y=LeagueIndex))+ geom_jitter(alpha = 0.1, size = 3)
-p4<-VioLeagueIndex("APM")
-```
 
 # Code
 
@@ -950,5 +948,153 @@ sc_predicted_agg<-sc_predicted%>%group_by(LeagueIndex)%>%
 
 ggplot(sc_predicted_agg,aes(x=LeagueIndex,y=value,fill=variable))+
    geom_bar(stat="identity", width=.5, position = "dodge")+theme_classic()+ylab("Correct %")+ggtitle("Pseudo Confusion Matrix")
+
+sc_predicted<-data.frame("LeagueIndex"=sc$LeagueIndex,"FlattenFitted"=sc_lm_rounded$fitted.values)
+
+sc_predicted$correct<-sc_predicted$LeagueIndex==sc_predicted$FlattenFitted
+
+sc_predicted_agg<-sc_predicted%>%group_by(LeagueIndex)%>%
+  add_tally()%>%summarise(correct_perc=sum(correct)/max(n),incorrect_perc=1-sum(correct)/max(n),n=max(n))%>%mutate(baserate=n/3317)%>%select(LeagueIndex,correct_perc,baserate)%>%
+  melt(id="LeagueIndex")
+
+ggplot(sc_predicted_agg,aes(x=LeagueIndex,y=value,fill=variable))+
+   geom_bar(stat="identity", width=.5, position = "dodge")+theme_classic()+ylab("Correct %")+ggtitle("Pseudo Confusion Matrix")
+
+#Final
+library(car) # VIF ,Final
+library(caret) #for easy machine learning workflow
+library(leaps) #for computing stepwise regression
+#require(foreign)
+library(ordinal)
+
+sc_sw<-regsubsets(LeagueIndex~.-GameID,sc_n , nvmax = 25,
+                     method = "exhaust")
+sc_sw_summary<-summary(sc_sw)
+
+plot(sc_sw_summary[['bic']]-min(sc_sw_summary[['bic']]),ylab="BIC",xlab="Index(1=One Predictor Model)",main ="Stepwise Modeling BIC")
+
+kable(sc_sw_summary[["outmat"]][1:5,c("ActionLatency","TotalHours",
+    "AssignToHotkeys","APM","MinimapAttacks")])
+
+sc_cor<-cor(sc_n[,c("ActionLatency","APM","TotalHours","MinimapAttacks","AssignToHotkeys")],use = "complete.obs")
+sc_cor_plot<-corrplot(sc_cor,
+    tl.cex=.75,
+    tl.col='black',
+    type="lower",diag=FALSE, method="number")
+
+sc_sw_lm<-lm(LeagueIndex~ActionLatency+TotalHours+AssignToHotkeys+APM+MinimapAttacks,sc_n)
+
+t1<-round(vif(sc_sw_lm),2)
+t11<-c("adj-R^2"=round(summary(sc_sw_lm)[["adj.r.squared"]],2),"BIC"=round(BIC(sc_sw_lm)))
+
+t2<-round(vif(update(sc_sw_lm,.~.-APM)),2)
+t22<-c(round(summary(update(sc_sw_lm,.~.-APM))[["adj.r.squared"]],2),round(BIC(update(sc_sw_lm,.~.-APM))))
+
+t3<-round(vif(update(sc_sw_lm,.~.-ActionLatency)),2)
+t33=c(round(summary(update(sc_sw_lm,.~.-ActionLatency))[["adj.r.squared"]],2),round(BIC(update(sc_sw_lm,.~.-ActionLatency)),0))
+kable(data.frame(list(t11,t22,t33)),col.names = c("Base","w/o APM","w/o Action"))
+
+knitr::kable(list(t1, t2,t3),
+    col.names = "VIF")
+
+lm_al<-lm(ActionLatency~.-GameID,sc_n)
+lm_al_vif<-data.frame(rbind(cbind(round(vif(lm_al),1),"All Pred."),
+    cbind(round(vif(update(lm_al,.~.-APM)),1),"W\\O APM")))
+
+colnames(lm_al_vif)<-c("VIF","Model")
+
+ggplot(lm_al_vif,aes(x=reorder(row.names(lm_al_vif),-1*as.numeric(VIF)),y=as.numeric(VIF),fill=Model))+
+   geom_bar(stat="identity", width=.5, position = "dodge")+theme_classic()+ylab("VIF")+xlab("Predictor")+ggtitle("VIF When Predicting ActionLatency")+ theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+sc_sw<-regsubsets(LeagueIndex~.-GameID,sc_n , nvmax = 25,
+                     method = "exhaust",force.out = "APM")
+sc_sw_summary<-summary(sc_sw)
+
+sc_sw_lm<-lm(LeagueIndex~ActionLatency+TotalHours+AssignToHotkeys+SelectByHotkeys+MinimapAttacks,sc_n)
+kable(vif(sc_sw_lm),
+    col.names = "VIF",
+    digits = 3,
+    caption = paste("$lm_\\circlearrowleft$ with remediation VIF Table. $R^2=$",
+      round(summary(sc_sw_lm)[["adj.r.squared"]],2),
+      " $BIC=$",round(BIC(sc_sw_lm)),0)
+      )
+
+lm_freqs<-data.frame(rbind(
+cbind(fitted.values(sc_lm_final),"omega"),
+cbind(fitted.values(sc_sw_lm),"sw"),
+cbind(sc_n$LeagueIndex,"act.")
+))
+
+colnames(lm_freqs)<-c("LeagueIndex","Model")
+
+ggplot(lm_freqs, aes(x=as.numeric(LeagueIndex), fill=Model)) + geom_density(alpha=0.2)+xlab("LeagueIndex")+ggtitle("LeagueIndex Density Plots: Models Vs Act")
+
+residualPlots(sc_lm_final,tests=FALSE)
+
+residualPlots(sc_sw_lm,tests=FALSE)
+
+
+boxCox(sc_sw_lm)
+
+sc_ord<-data.frame(scale(sc_n))
+
+m <- clm(factor(LeagueIndex) ~ ActionLatency+TotalHours+AssignToHotkeys+SelectByHotkeys+MinimapAttacks, data = sc_ord, na.action = na.omit)
+hist(as.numeric(unlist(predict(m,sc_ord,type="class"))),main = paste("Fitted Values of Proportional Odds Model BIC=",round(BIC(m))),nclass = 8,xlab = "LeagueIndex")
+
+m1 <- clm(factor(LeagueIndex) ~ ActionLatency, data = sc_ord, na.action = na.omit)
+m2 <- clm(factor(LeagueIndex) ~ ActionLatency+TotalHours, data = sc_ord ,na.action = na.omit)
+m3 <- clm(factor(LeagueIndex) ~ ActionLatency+TotalHours+AssignToHotkeys, data = sc_ord, na.action = na.omit)
+m4 <- clm(factor(LeagueIndex) ~ ActionLatency+TotalHours+AssignToHotkeys+SelectByHotkeys, data = sc_ord, na.action = na.omit)
+m5 <- clm(factor(LeagueIndex) ~ ActionLatency+TotalHours+AssignToHotkeys+SelectByHotkeys+MinimapAttacks, data = sc_ord, na.action = na.omit)
+
+
+sw1 <- lm(LeagueIndex ~ ActionLatency, data = sc_n, na.action = na.omit)
+sw2 <- lm(LeagueIndex  ~ ActionLatency+TotalHours, data = sc_n, na.action = na.omit)
+sw3 <- lm(LeagueIndex  ~ ActionLatency+TotalHours+AssignToHotkeys, data = sc_n, na.action = na.omit)
+sw4 <- lm(LeagueIndex  ~ ActionLatency+TotalHours+AssignToHotkeys+SelectByHotkeys, data = sc_n, na.action = na.omit)
+sw5 <- lm(LeagueIndex  ~ ActionLatency+TotalHours+AssignToHotkeys+SelectByHotkeys+MinimapAttacks, data = sc_n, na.action = na.omit)
+
+pval_bic<-cbind(c(BIC(sc_lm),BIC(sc_lm_1),BIC(sc_lm_2),BIC(sc_lm_3),
+    BIC(sc_lm_4),BIC(sc_lm_final)),"PValue")%>%data.frame()
+pval_bic$ModelSequence <- 1:nrow(pval_bic)
+
+sw_bic<-cbind(c(BIC(sw1),BIC(sw2),BIC(sw3),BIC(sw4),BIC(sw5)),"SW")%>%data.frame()
+sw_bic$ModelSequence<- 1:nrow(sw_bic)
+
+ord_bic<-cbind(c(BIC(m1),BIC(m2),BIC(m3),BIC(m4),BIC(m5)),"Ord")%>%data.frame()
+ord_bic$ModelSequence<- 1:nrow(ord_bic)
+
+lm_bic<-rbind(sw_bic,pval_bic,ord_bic)
+lm_bic$X1<-as.numeric(as.character(lm_bic$X1))
+lm_bic$X1<-lm_bic$X1-min(lm_bic$X1)
+ggplot(lm_bic,aes(ModelSequence,y=X1,color=X2))+ geom_point()+
+  geom_smooth(method=lm, se=FALSE)+ylab("BIC-Min(BIC)")+theme_classic()
+
+sc_sw_lm_rounded<-sc_sw_lm
+sc_sw_lm_rounded$fitted.values[sc_sw_lm_rounded$fitted.values>7]<-7
+sc_sw_lm_rounded$fitted.values<-round(sc_sw_lm_rounded$fitted.values)
+
+
+sc_sw_predicted<-data.frame("LeagueIndex"=sc_n$LeagueIndex,"FlattenFitted"=sc_sw_lm_rounded$fitted.values)
+
+sc_sw_predicted$correct<-sc_sw_predicted$LeagueIndex==sc_sw_predicted$FlattenFitted
+
+sc_sw_predicted_agg<-sc_sw_predicted%>%group_by(LeagueIndex)%>%
+  add_tally()%>%summarise(correct_perc=sum(correct)/max(n),incorrect_perc=1-sum(correct)/max(n),n=max(n))%>%mutate(baserate=n/3317)%>%select(LeagueIndex,correct_perc,baserate)%>%
+  melt(id="LeagueIndex")
+
+ggplot(sc_sw_predicted_agg,aes(x=LeagueIndex,y=value,fill=variable))+
+   geom_bar(stat="identity", width=.5, position = "dodge")+theme_classic()+ylab("Correct %")+ggtitle(paste("Stepwise Regression Pseudo Confusion Matrix, Acc",round(sum((sc_n$LeagueIndex==round(sc_sw_lm_rounded$fitted.values)))/count(sc),2)*100,"%"))
+
+sc_ord_predicted<-data.frame("LeagueIndex"=sc_n$LeagueIndex,"FlattenFitted"=as.numeric(unlist(predict(m,sc_ord,type="class"))))
+sc_ord_predicted$correct<-sc_ord_predicted$LeagueIndex==sc_ord_predicted$FlattenFitted
+sc_ord_predicted_agg<-sc_ord_predicted%>%group_by(LeagueIndex)%>%
+  add_tally()%>%summarise(correct_perc=sum(correct)/max(n),incorrect_perc=1-sum(correct)/max(n),n=max(n))%>%mutate(baserate=n/3317)%>%select(LeagueIndex,correct_perc,baserate)%>%
+  melt(id="LeagueIndex")
+
+ggplot(sc_ord_predicted_agg,aes(x=LeagueIndex,y=value,fill=variable))+
+   geom_bar(stat="identity", width=.5, position = "dodge")+theme_classic()+ylab("Correct %")+ggtitle(paste("Ordinal Regression Pseudo Confusion Matrix, Acc",round(sum((sc_n$LeagueIndex==sc_ord_predicted$FlattenFitted))/count(sc),2)*100,"%"))
+
 ```
+
 # References

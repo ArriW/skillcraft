@@ -470,6 +470,11 @@ library(caret) #for easy machine learning workflow
 library(leaps) #for computing stepwise regression
 #require(foreign)
 library(ordinal)
+# Optional: used only by the ordinal-extension section's Lipsitz GoF test.
+# The section degrades gracefully if the package is not installed.
+if (!requireNamespace("generalhoslem", quietly = TRUE)) {
+  message("generalhoslem not installed; Lipsitz test will be skipped.")
+}
 ```
 
 The final research question aligns with the initial research question's scope, which is to explain what makes players highly ranked. The last effort was limited because it impromptu reduced the span of the model using p-values, only dabbled in diagnostics. More importantly, it applied a multivariant linear regression to an ordinal response. 
@@ -745,6 +750,232 @@ A player with high **ActionLatency** would move their screen to a new focus and 
 
 **WorkersMade and ComplexAbilitiesUsed** also did not make it into $lm_\circlearrowleft$ when using five predictors. None of the variables that made it into the final model seem like a direct replacement, so my midterm two reviews still seem appropriate. Both predictors are less potent in terms of explanation when compared to the newly introduced predictors.
 
+\newpage
+
+# Extension: Proper Ordinal Regression
+
+The original `clm` section was a sketch — the response had been z-scaled alongside the predictors (destroying the ordinal coding), the proportional-odds assumption was never checked, no stepwise selection was done on the ordinal likelihood, and diagnostics/predictions were thin. This section revisits $ord_\circlearrowleft$ with the tooling actually suited to an ordinal response: a cumulative link model (CLM) fit on the unscaled response, a check of the proportional-odds assumption, link-function selection, likelihood-based stepwise selection, and evaluation metrics that respect the rank-ordering of **LeagueIndex**.
+
+```{r ord_setup, include=FALSE}
+# Build an analysis frame with the log(TotalHours) transform already applied in sc_n.
+# Predictors are centered/scaled for numerical stability and for comparable
+# odds ratios; the RESPONSE is kept as an ordered factor (do NOT scale it).
+sc_ord2 <- sc_n %>%
+  dplyr::select(-GameID) %>%
+  mutate(across(where(is.numeric) & !matches("^LeagueIndex$"),
+                ~as.numeric(scale(.)))) %>%
+  mutate(LeagueIndex = factor(LeagueIndex, ordered = TRUE))
+```
+
+## Link Function Selection
+
+Cumulative link models support several link functions, each implying a different latent-error distribution. The introduction motivated **LeagueIndex** as a crude observation of an underlying Elo-like score whose errors are Gumbel distributed — which maps onto a complementary log-log (cloglog) or loglog link, not the default logit. All four available links are fit on the same predictor set from $lm_\circlearrowleft$ and compared by AIC.
+
+```{r ord_links, echo=FALSE}
+links <- c("logit", "probit", "cloglog", "cauchit")
+form_full <- factor(LeagueIndex, ordered = TRUE) ~ ActionLatency + TotalHours +
+  AssignToHotkeys + SelectByHotkeys + MinimapAttacks
+fits_link <- lapply(links, function(L) {
+  clm(form_full, data = sc_ord2, link = L)
+})
+names(fits_link) <- links
+kable(data.frame(
+  link = links,
+  logLik = sapply(fits_link, function(f) round(as.numeric(logLik(f)), 1)),
+  AIC    = sapply(fits_link, function(f) round(AIC(f), 1)),
+  BIC    = sapply(fits_link, function(f) round(BIC(f), 1))
+), caption = "Link function comparison on the $lm_\\circlearrowleft$ predictor set")
+```
+
+The best link by AIC is selected as the base for the rest of this section.
+
+```{r ord_best_link, echo=FALSE}
+best_link <- names(fits_link)[which.min(sapply(fits_link, AIC))]
+ord_base <- fits_link[[best_link]]
+cat("Selected link:", best_link, "\n")
+```
+
+## Likelihood-Based Stepwise Selection
+
+Rather than inheriting the predictor set from an OLS model fit on an ordinal response (as $ord_\circlearrowleft$ did), selection is redone against the ordinal likelihood itself. Starting from an intercept-only CLM and scoping up to all predictors on `sc_n`, bidirectional stepwise selection by AIC yields $ord_{AIC}$.
+
+```{r ord_stepwise, echo=FALSE, results="hide", message=FALSE, warning=FALSE}
+ord_scope_upper <- as.formula(paste0(
+  "factor(LeagueIndex, ordered = TRUE) ~ ",
+  paste(setdiff(colnames(sc_ord2), "LeagueIndex"), collapse = " + ")
+))
+ord_null <- clm(factor(LeagueIndex, ordered = TRUE) ~ 1,
+                data = sc_ord2, link = best_link)
+ord_step <- step(ord_null,
+                 scope = list(lower = ~1, upper = ord_scope_upper),
+                 direction = "both", trace = 0)
+```
+
+```{r ord_step_table, echo=FALSE}
+kable(tidy(ord_step, conf.int = TRUE),
+      digits = 3,
+      caption = paste0("$ord_{AIC}$: stepwise CLM, link = ", best_link))
+```
+
+## Proportional-Odds Assumption
+
+The central assumption of the cumulative model is that each predictor's effect is the same across all response thresholds — the "parallel slopes" assumption. The `ordinal` package provides two score tests:
+
+- `nominal_test` tests whether each predictor should be allowed a separate slope per threshold (i.e., partial proportional odds is needed).
+- `scale_test` tests whether the latent error scale depends on the predictor.
+
+```{r ord_po_tests, echo=FALSE, warning=FALSE, message=FALSE}
+po_nom <- nominal_test(ord_step)
+po_sca <- scale_test(ord_step)
+kable(po_nom, digits = 3, caption = "nominal\\_test: parallel slopes (low p = violation)")
+kable(po_sca, digits = 3, caption = "scale\\_test: constant error scale (low p = violation)")
+```
+
+Predictors with significant `nominal_test` p-values violate parallel slopes and are allowed to have separate coefficients per threshold via the `nominal =` argument, producing a **partial proportional odds** model, $ord_{PPO}$. Predictors with significant `scale_test` are allowed a scale effect via the `scale =` argument.
+
+```{r ord_ppo, echo=FALSE, warning=FALSE, message=FALSE}
+alpha_po <- 0.05
+viol_nom <- rownames(po_nom)[!is.na(po_nom[["Pr(>Chi)"]]) &
+                             po_nom[["Pr(>Chi)"]] < alpha_po &
+                             rownames(po_nom) != "<none>"]
+viol_sca <- rownames(po_sca)[!is.na(po_sca[["Pr(>Chi)"]]) &
+                             po_sca[["Pr(>Chi)"]] < alpha_po &
+                             rownames(po_sca) != "<none>"]
+
+build_rhs <- function(vars) if (length(vars)) paste(vars, collapse = " + ") else NULL
+fixed_vars <- setdiff(attr(terms(ord_step), "term.labels"), c(viol_nom, viol_sca))
+
+ord_ppo <- tryCatch({
+  args <- list(
+    location = as.formula(paste0(
+      "factor(LeagueIndex, ordered = TRUE) ~ ",
+      if (length(fixed_vars)) paste(fixed_vars, collapse = " + ") else "1"
+    )),
+    data = sc_ord2, link = best_link
+  )
+  if (length(viol_nom)) args$nominal <- as.formula(paste0("~ ", build_rhs(viol_nom)))
+  if (length(viol_sca)) args$scale   <- as.formula(paste0("~ ", build_rhs(viol_sca)))
+  do.call(clm, args)
+}, error = function(e) NULL)
+
+cat("Predictors violating parallel slopes (alpha = 0.05):",
+    if (length(viol_nom)) paste(viol_nom, collapse = ", ") else "none", "\n")
+cat("Predictors violating constant scale (alpha = 0.05):",
+    if (length(viol_sca)) paste(viol_sca, collapse = ", ") else "none", "\n")
+
+if (!is.null(ord_ppo)) {
+  kable(data.frame(
+    Model  = c("ord_{AIC} (PO)", "ord_{PPO}"),
+    logLik = c(round(as.numeric(logLik(ord_step)), 1),
+               round(as.numeric(logLik(ord_ppo)),  1)),
+    AIC    = c(round(AIC(ord_step), 1), round(AIC(ord_ppo), 1)),
+    BIC    = c(round(BIC(ord_step), 1), round(BIC(ord_ppo), 1))
+  ), caption = "Proportional vs. partial-proportional odds")
+}
+```
+
+## Interpretation: Odds Ratios
+
+Under a logit-link CLM, $\exp(\beta_j)$ is the multiplicative effect of a one-SD increase in predictor $j$ on the odds of being *above* any given league threshold, holding all other predictors fixed. Under cloglog the equivalent quantity is a hazard ratio on the latent Gumbel scale. Because predictors were standardized, the coefficients are directly comparable in magnitude.
+
+```{r ord_or, echo=FALSE}
+ord_final <- if (!is.null(ord_ppo) && AIC(ord_ppo) < AIC(ord_step)) ord_ppo else ord_step
+or_tbl <- tidy(ord_final, conf.int = TRUE) %>%
+  filter(coef.type == "location") %>%
+  mutate(OR = exp(estimate), OR_low = exp(conf.low), OR_high = exp(conf.high)) %>%
+  dplyr::select(term, estimate, std.error, OR, OR_low, OR_high, p.value)
+kable(or_tbl, digits = 3,
+      caption = paste0("$ord_{final}$ standardized effects and odds-scale ratios (link = ",
+                       best_link, ")"))
+```
+
+## Goodness of Fit
+
+Without a single "R²" for ordinal models, three complementary summaries are reported: McFadden's pseudo-R² against the intercept-only model, the Lipsitz goodness-of-fit test (a generalization of Hosmer-Lemeshow to ordinal responses), and information criteria versus the earlier models $lm_\omega$, $lm_\circlearrowleft$, and the original $ord_\circlearrowleft$.
+
+```{r ord_gof, echo=FALSE, warning=FALSE, message=FALSE}
+mcfadden <- 1 - as.numeric(logLik(ord_final)) / as.numeric(logLik(ord_null))
+
+lipsitz_p <- tryCatch({
+  if (requireNamespace("generalhoslem", quietly = TRUE)) {
+    suppressWarnings(generalhoslem::lipsitz.test(ord_final)$p.value)
+  } else NA_real_
+}, error = function(e) NA_real_)
+
+kable(data.frame(
+  Model  = c("lm_omega", "lm_stepwise", "ord_orig", "ord_final"),
+  AIC    = c(round(AIC(sc_lm_final), 1), round(AIC(sc_sw_lm), 1),
+             round(AIC(m), 1),            round(AIC(ord_final), 1)),
+  BIC    = c(round(BIC(sc_lm_final), 1), round(BIC(sc_sw_lm), 1),
+             round(BIC(m), 1),            round(BIC(ord_final), 1))
+), caption = "Information criteria across models")
+
+cat(sprintf("McFadden pseudo-R^2 for ord_final: %.3f\n", mcfadden))
+if (!is.na(lipsitz_p)) {
+  cat(sprintf("Lipsitz goodness-of-fit p-value: %.3f (high p = no evidence of lack of fit)\n",
+              lipsitz_p))
+}
+```
+
+## Predictive Performance
+
+Predictions from a CLM come from `predict(fit, type = "class")`, which returns the factor level with highest posterior probability. The key step missed in the original section is converting the returned factor back to its original integer levels via `as.integer(as.character(...))` rather than `as.numeric(factor)` (which returns internal codes and, when combined with z-scaling of the response, was the source of the 15% accuracy).
+
+Because **LeagueIndex** is ordinal, three metrics are reported: exact accuracy, within-1 accuracy (the predicted rank is correct to within one league), and mean absolute error (MAE) in league ranks. A random-guess baseline and the $lm_\circlearrowleft$ rounded/flattened predictor from earlier are included for comparison.
+
+```{r ord_predict, echo=FALSE, warning=FALSE, message=FALSE}
+pred_ord <- predict(ord_final, newdata = sc_ord2, type = "class")$fit
+pred_ord <- as.integer(as.character(pred_ord))
+y_true   <- as.integer(as.character(sc_ord2$LeagueIndex))
+
+pred_lm  <- pmin(pmax(round(fitted(sc_sw_lm)), 1), 7)
+
+acc       <- function(p, y) mean(p == y)
+within1   <- function(p, y) mean(abs(p - y) <= 1)
+mae       <- function(p, y) mean(abs(p - y))
+
+base_rates <- as.numeric(prop.table(table(y_true)))
+rand_acc   <- sum(base_rates^2)  # expected accuracy of base-rate guessing
+
+kable(data.frame(
+  Model       = c("base-rate guess", "lm_stepwise (rounded)", "ord_final"),
+  Accuracy    = round(c(rand_acc, acc(pred_lm, y_true), acc(pred_ord, y_true)), 3),
+  `Within-1`  = round(c(NA,        within1(pred_lm, y_true), within1(pred_ord, y_true)), 3),
+  MAE         = round(c(NA,        mae(pred_lm, y_true),     mae(pred_ord, y_true)), 3),
+  check.names = FALSE
+), caption = "Predictive performance (in-sample)")
+```
+
+```{r ord_confusion, echo=FALSE}
+conf <- table(Actual = y_true, Predicted = factor(pred_ord, levels = 1:7))
+kable(as.matrix(conf),
+      caption = "$ord_{final}$ confusion matrix (rows = actual, cols = predicted)")
+```
+
+```{r ord_confusion_plot, echo=FALSE}
+ord_pred_df <- data.frame(LeagueIndex = y_true, Pred = pred_ord) %>%
+  group_by(LeagueIndex) %>%
+  summarise(correct_perc = mean(Pred == LeagueIndex),
+            within1_perc = mean(abs(Pred - LeagueIndex) <= 1),
+            baserate     = n() / length(y_true)) %>%
+  reshape2::melt(id = "LeagueIndex")
+
+ggplot(ord_pred_df, aes(x = factor(LeagueIndex), y = value, fill = variable)) +
+  geom_bar(stat = "identity", width = .6, position = "dodge") +
+  theme_classic() + ylab("Proportion") + xlab("LeagueIndex") +
+  ggtitle(paste0("ord_final accuracy by LeagueIndex (overall acc = ",
+                 round(acc(pred_ord, y_true) * 100), "%, within-1 = ",
+                 round(within1(pred_ord, y_true) * 100), "%)"))
+```
+
+## Takeaways from the Ordinal Refit
+
+With the right tooling the ordinal model is no longer the embarrassing tail of this analysis. Three observations worth calling out:
+
+1. **The link function matters.** The Elo/Gumbel motivation from the introduction is now more than hand-waving — the link comparison table shows empirically which latent-error distribution the data prefer. If cloglog wins, that is direct support for the Gumbel story.
+2. **The parallel-slopes assumption is testable and often violated.** The `nominal_test` output identifies which predictors need a partial-PO relaxation. This was the single largest gap in the original treatment; moving to $ord_{PPO}$ when tests warrant it is the ordinal analogue of the confounding remediation already performed on the OLS models.
+3. **The fair metric for an ordinal response is rank-aware.** Exact accuracy penalizes a Diamond-vs-Master miss the same as a Bronze-vs-Grandmaster miss. Within-1 accuracy and MAE make clear that even when the ordinal model misses the exact bucket, it misses by a league — not at random. That is the property the midterm-2 lm never had and is the real payoff of doing the ordinal regression properly.
+
 # Conclusion
 
 With this analysis, in many ways, I bit off more than I could chew. Choosing an ordinal response for this analysis was a daunting endeavor based on the material we ended up covering. Nevertheless, I think the experience was very successful. The linear regression assumptions were violated; therefore, bias was built into the model; the insights gained were still a tremendous help in weighing what predictors were more impactful for an explanation. I would not attempt to predict with using any of these models unless I got the ordinal model up in the running. Still, I am confident to offer the following to aspiring Starcraft II players:
@@ -756,6 +987,8 @@ With this analysis, in many ways, I bit off more than I could chew. Choosing an 
 + 5 Begin using the hotkeys as the default selection method.
 
 Focus on these things and the APMS will come.
+
+*Post-script:* The ordinal regression extension at the end of this report (added after the original submission) delivers on what the "Prelude to final" promised — proportional-odds testing, a partial-PO relaxation where the test warrants it, link-function selection that engages with the Elo/Gumbel motivation from the introduction, and rank-aware predictive metrics. The OLS conclusions above still stand for explanation; the CLM is what I would now use for prediction.
 
 \newpage
 

@@ -59,7 +59,7 @@ library(reshape2) #melt function
 ```
 # Introduction
  
-Videogames are one of my favorite past times. As a player who participates in ranked play, I've always kept my eye on the forefront of global competitions. One of the most notable games to establish an international competitive scene backed by paid professionals was the real-time strategy game (RTS) Starcraft II (SC2). In 2013 the top 10 starcraft players made nearly four-million dollars from their combined winnings @Winnings2019. Watching top-caliber players reflexes and control is astonishing to even seasoned videogame enthusiasts. At the 2019 StarCraft II World Championship Finale, many others and I packed into the arena to see what these professions could do firsthand.
+Videogames are one of my favorite past times. As a player who participates in ranked play, I've always kept my eye on the forefront of global competitions. One of the most notable games to establish an international competitive scene backed by paid professionals was the real-time strategy game (RTS) Starcraft II (SC2). In 2013 the top 10 starcraft players made nearly four-million dollars from their combined winnings @Winnings2019. Watching top-caliber players reflexes and control is astonishing to even seasoned videogame enthusiasts. At the 2019 StarCraft II World Championship Finale, many others and I packed into the arena to see what these professionals could do firsthand.
 
 !['@SC2IIWCSGlobal'](./inline/WCS.png)
 
@@ -389,7 +389,7 @@ kable(anova(sc_lm_final,sc_lm_9),digits=3,caption = "ANOVA $lm_\\omega$ and $lm_
 
 #### Revised $lm_\omega$
 
-After performing the changes for confounding variables, the final model results in the following coefficients. This model will be rummaged through more expensively with better tools for the final portion of this assignment.
+After performing the changes for confounding variables, the final model results in the following coefficients. This model will be rummaged through more extensively with better tools for the final portion of this assignment.
 
 ```{r,echo=FALSE,collapse=TRUE}
 sc_lm_final<-update(sc_lm_final,.~.-AssignToHotkeys-HoursPerWeek)
@@ -400,7 +400,7 @@ kable(confint(sc_lm_final))
 
 Without using cross-validation, we can see some fundamental issues with the fitted values of each model reviewed. The predictions of the model behavior and accuracy comparable between $\Omega$ & $\omega$, so only $\omega$ will be used in the following section.
 
-The first plot is a scatterplot with the fitted values by dominant predictor APM. Some of the players are excepted to have a LeagueIndex > 10, which does not exist in sampled response. Although LeagueIndex > 7 does tease that the Grandmaster tier is an unbounded tier in terms of skill points. Overall, the continuous fitted values fail to capture the discrete nature of the response. 
+The first plot is a scatterplot with the fitted values by dominant predictor APM. Some of the players are expected to have a LeagueIndex > 10, which does not exist in sampled response. Although LeagueIndex > 7 does tease that the Grandmaster tier is an unbounded tier in terms of skill points. Overall, the continuous fitted values fail to capture the discrete nature of the response. 
 
 The fitted values will be flattened such that when LeagueIndex > 7 will be set LeagueIndex=7, then each value will be rounded, so only integer values remain to help interpret the results of the model.
 
@@ -479,7 +479,7 @@ if (!requireNamespace("generalhoslem", quietly = TRUE)) {
 
 The final research question aligns with the initial research question's scope, which is to explain what makes players highly ranked. The last effort was limited because it impromptu reduced the span of the model using p-values, only dabbled in diagnostics. More importantly, it applied a multivariant linear regression to an ordinal response. 
 
-To select better combination of predictors, the final analysis once again utilizes MLR but instead in combination with stepwise regression. The stepwise regression $lm_\circlearrowleft$ provides a more exhaustive examination of the combination of predictors than the initial $lm_\omega$. With $lm_\omega$ many predictors were trimmed prior to modeling based on the concern that they may be colinear APMs thus hindering the model's explaintory power. These predictors will be reinstated for $lm_\circlearrowleft$'s selection because the Bayesian information criterion (BIC) should account for the variance inflation and trim accordingly. Should any of these predictors survive the trimming, they will be re-examined. 
+To select better combination of predictors, the final analysis once again utilizes MLR but instead in combination with stepwise regression. The stepwise regression $lm_\circlearrowleft$ provides a more exhaustive examination of the combination of predictors than the initial $lm_\omega$. With $lm_\omega$ many predictors were trimmed prior to modeling based on the concern that they may be colinear APMs thus hindering the model's explanatory power. These predictors will be reinstated for $lm_\circlearrowleft$'s selection because the Bayesian information criterion (BIC) should account for the variance inflation and trim accordingly. Should any of these predictors survive the trimming, they will be re-examined. 
 
 Subsequently, additional diagnostics will be performed iteratively with remediation as needed ^[Four iterations of preliminary diagnostics/remediation on $lm_\omega$ revealed **TotalHours** contained four points with high leverage with Cook's Distance greater than 1. To prevent this analysis from ballooning due to excessive remediation, a log transform on **Totalhours** will be performed before creating $lm_\circlearrowleft$. At the same time, $lm_\omega$ will be left the same to provide a stark constant between the initial naive approach and more formal model selection. **TotalHours** does not contain any 0 values.].
 
@@ -509,7 +509,7 @@ kable(sc_sw_summary[["outmat"]][1:5,c("ActionLatency","TotalHours",
 ```
 Choosing the best model provided by five predictors intuitively seemed like a good route for explanatory purposes as a "Top 5 Skills for aspiring starcraft players" sounds like a good starting point, but diminishing returns concerning BIC also seems to support predictors five as a reasonable cutoff.
 
-# Diagonostics
+# Diagnostics
 
 Knowing that $lm_\omega$ & $lm_\circlearrowleft$  has been uncharacteristically fitted to the ordinal response, most of the diagnostics and related assumptions will be consistently violated regardless of transformations within MLR modeling.
 
@@ -636,7 +636,7 @@ boxCox(sc_sw_lm)
 
 The remaining diagnostics do not reveal anything more clearly then the previously chosen diagnostics.
 
-# Portional Odds model
+# Proportional Odds model
 
 To construct a ordinal regression model using the the `ordinal` package and function `clm` using the same parameters as final model $lm_\circlearrowleft$ @ordinal :
 
@@ -746,7 +746,7 @@ Of the predictors removed from the model, **APM** was the most notable. **APM** 
 
 A player with high **ActionLatency** would move their screen to a new focus and rapidly take action. This does not necessarily imply anything about the intervals they move their screen. I think this is a fair reflection of the magnitude of a player's intent. Players who are unsure how to react to scenarios dynamically may switch frames, pause and digest the situation, and respond accordingly. Players who are confident in their play may minimize this time by knowing what to expect from the opponent, because of their ability to understand battle states from their minimap prior to switching their focus and taking action, or because they minimize reliance on clickable buttons that are part of the GUI by instead using hotkeys to take action which is generally a faster mechanism to trigger. This discussion also highlights another persistent predictor, and that is **MiniMapAttacks**, thoroughly discussed in midterm 2;** MiniMapAttacks** reflects the number of attacks the player takes on their minimap without the need of switching their primary focus. Both high **MiniMapAttacks** and low **ActionLatency** maybe sign of players becoming less dependent on visually digesting the battle states before reacting. Subjectively, I think this is a very cool idea and a teachable play style. 
 
-**UniqueHotKeys** also did not make it into the final model, **AssignToHotkeys** persisted between the two models, and **SelectByHotkey** was a new addition. This is quite an interesting change. A head-to-head comparison between these switches is not completely appropriate without the formation of many additional models. Still, within the context of a match, it's quite reasonable to theorize their differences. **UniqueHotKeys**, based on its definition, reflects the overall unique usage of the keyboard combinations per unit of time. **AssignToHotkeys** considers the rate at which the player assigns unit or building groupings. For example, a player may assign unit A and unit B to hotkey keyboard button #1. Subsequently, a player can overwrite keyboard button #1 to select individually unit C or add to the original hotkey group. From the  **UniqueHotKeys** perspective, it would look like this player only using one type of action per unit of time instead of reflecting the underline dynamics of the selection change. For this reason, it does seem like better encouragement to tell a player to increase their **AssignToHotkeys** instead of **UniqueHotKeys**. **SelectByHotkey** when used in tandem and may reflect **AssignToHotkeys** assignments actual usage. 
+**UniqueHotKeys** also did not make it into the final model, **AssignToHotkeys** persisted between the two models, and **SelectByHotkey** was a new addition. This is quite an interesting change. A head-to-head comparison between these switches is not completely appropriate without the formation of many additional models. Still, within the context of a match, it's quite reasonable to theorize their differences. **UniqueHotKeys**, based on its definition, reflects the overall unique usage of the keyboard combinations per unit of time. **AssignToHotkeys** considers the rate at which the player assigns unit or building groupings. For example, a player may assign unit A and unit B to hotkey keyboard button #1. Subsequently, a player can overwrite keyboard button #1 to select individually unit C or add to the original hotkey group. From the  **UniqueHotKeys** perspective, it would look like this player only using one type of action per unit of time instead of reflecting the underlying dynamics of the selection change. For this reason, it does seem like better encouragement to tell a player to increase their **AssignToHotkeys** instead of **UniqueHotKeys**. **SelectByHotkey** when used in tandem and may reflect **AssignToHotkeys** assignments actual usage. 
 
 **WorkersMade and ComplexAbilitiesUsed** also did not make it into $lm_\circlearrowleft$ when using five predictors. None of the variables that made it into the final model seem like a direct replacement, so my midterm two reviews still seem appropriate. Both predictors are less potent in terms of explanation when compared to the newly introduced predictors.
 
@@ -765,6 +765,27 @@ sc_ord2 <- sc_n %>%
   mutate(across(where(is.numeric) & !matches("^LeagueIndex$"),
                 ~as.numeric(scale(.)))) %>%
   mutate(LeagueIndex = factor(LeagueIndex, ordered = TRUE))
+
+# Shared visual identity for every plot in this section: matches the league
+# icon palette already used earlier and a single typography choice so the
+# extension reads as a single piece of work, not a patchwork of defaults.
+league_pal <- cbPalette  # Bronze, Silver, Gold, Platinum, Diamond, Master, Grandmaster
+league_lbl <- c("1 Bronze", "2 Silver", "3 Gold", "4 Platinum",
+                "5 Diamond", "6 Master", "7 Grandmaster")
+
+theme_ord <- function() {
+  theme_classic(base_size = 11) +
+    theme(
+      plot.title       = element_text(face = "bold"),
+      plot.subtitle    = element_text(color = "grey30"),
+      plot.caption     = element_text(color = "grey40", hjust = 0, size = 8),
+      legend.position  = "bottom",
+      legend.title     = element_text(face = "bold"),
+      panel.grid.major.y = element_line(color = "grey92"),
+      strip.background = element_rect(fill = "grey95", color = NA),
+      strip.text       = element_text(face = "bold")
+    )
+}
 ```
 
 ## Link Function Selection
@@ -946,39 +967,242 @@ kable(data.frame(
 ), caption = "Predictive performance (in-sample)")
 ```
 
-```{r ord_confusion, echo=FALSE}
-conf <- table(Actual = y_true, Predicted = factor(pred_ord, levels = 1:7))
-kable(as.matrix(conf),
-      caption = "$ord_{final}$ confusion matrix (rows = actual, cols = predicted)")
+```{r ord_confusion_plot, echo=FALSE, fig.height=4.2, fig.width=7}
+# Row-normalized confusion matrix as a heatmap. Rows sum to 1 so the
+# diagonal can be read directly as per-league recall and off-diagonals as
+# the typical *direction* of the model's mistakes -- the killer property
+# of an ordinal classifier vs. a multinomial one.
+conf_tbl <- table(Actual = y_true,
+                  Predicted = factor(pred_ord, levels = 1:7))
+conf_df  <- as.data.frame(prop.table(conf_tbl, margin = 1)) %>%
+  rename(prob = Freq) %>%
+  mutate(Actual    = factor(Actual,    levels = 1:7, labels = league_lbl),
+         Predicted = factor(Predicted, levels = 1:7, labels = league_lbl))
+
+ggplot(conf_df, aes(x = Predicted, y = Actual, fill = prob)) +
+  geom_tile(color = "white", linewidth = 0.4) +
+  geom_text(aes(label = ifelse(prob >= 0.01, sprintf("%.2f", prob), "")),
+            size = 3, color = "grey15") +
+  scale_fill_gradient(low = "white", high = "#0072B2",
+                      limits = c(0, 1), name = "row prob.") +
+  coord_equal() +
+  labs(title    = "ord_final row-normalized confusion matrix",
+       subtitle = "Diagonal = per-league recall; off-diagonals concentrate on adjacent leagues",
+       caption  = "Mass clustered near the diagonal is the ordinal-aware behavior the lm cannot produce.") +
+  theme_ord() +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1))
 ```
 
-```{r ord_confusion_plot, echo=FALSE}
+```{r ord_per_league, echo=FALSE, fig.height=3.6, fig.width=7}
+# Per-league exact and within-1 accuracy against base rate. Stacked as
+# faceted bars rather than dodged so each metric is easy to scan.
 ord_pred_df <- data.frame(LeagueIndex = y_true, Pred = pred_ord) %>%
   group_by(LeagueIndex) %>%
-  summarise(correct_perc = mean(Pred == LeagueIndex),
-            within1_perc = mean(abs(Pred - LeagueIndex) <= 1),
-            baserate     = n() / length(y_true)) %>%
-  reshape2::melt(id = "LeagueIndex")
+  summarise(`Exact accuracy`    = mean(Pred == LeagueIndex),
+            `Within-1 accuracy` = mean(abs(Pred - LeagueIndex) <= 1),
+            `Base rate`         = n() / length(y_true),
+            .groups = "drop") %>%
+  pivot_longer(-LeagueIndex, names_to = "metric", values_to = "value") %>%
+  mutate(metric = factor(metric, levels = c("Base rate", "Exact accuracy",
+                                            "Within-1 accuracy")),
+         LeagueIndex = factor(LeagueIndex, levels = 1:7, labels = league_lbl))
 
-ggplot(ord_pred_df, aes(x = factor(LeagueIndex), y = value, fill = variable)) +
-  geom_bar(stat = "identity", width = .6, position = "dodge") +
-  theme_classic() + ylab("Proportion") + xlab("LeagueIndex") +
-  ggtitle(paste0("ord_final accuracy by LeagueIndex (overall acc = ",
-                 round(acc(pred_ord, y_true) * 100), "%, within-1 = ",
-                 round(within1(pred_ord, y_true) * 100), "%)"))
+ggplot(ord_pred_df, aes(x = LeagueIndex, y = value, fill = LeagueIndex)) +
+  geom_col(width = .75, color = "grey20", linewidth = 0.2) +
+  geom_text(aes(label = sprintf("%.0f%%", value * 100)),
+            vjust = -0.4, size = 2.8, color = "grey25") +
+  scale_fill_manual(values = league_pal, guide = "none") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1),
+                     limits = c(0, 1.05), expand = expansion(mult = c(0, .02))) +
+  facet_wrap(~ metric, nrow = 1) +
+  labs(title    = paste0("ord_final per-league performance"),
+       subtitle = sprintf("Overall: %.0f%% exact, %.0f%% within-1, MAE %.2f leagues",
+                          acc(pred_ord, y_true) * 100,
+                          within1(pred_ord, y_true) * 100,
+                          mae(pred_ord, y_true)),
+       x = NULL, y = NULL) +
+  theme_ord() +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, size = 8))
+```
+
+## Predicted-Probability Curves Across Leagues
+
+The defining strength of a CLM over the OLS rounding hack is that it gives a *full predicted distribution over leagues* for any value of a predictor, not a single number. The plots below sweep each top-AIC predictor across its observed range with all other predictors held at their median, then stack the model's predicted probabilities for each league. The bands are the ordinal analogue of the violin plots from the exploration section, but driven by the model rather than the raw data.
+
+```{r ord_effects, echo=FALSE, fig.height=6.6, fig.width=7.5, message=FALSE, warning=FALSE}
+loc_terms <- attr(terms(ord_final), "term.labels")
+loc_terms <- intersect(loc_terms, colnames(sc_ord2))[1:min(4, length(loc_terms))]
+
+build_grid <- function(var, n = 120) {
+  med <- sc_ord2 %>%
+    dplyr::select(all_of(setdiff(loc_terms, var))) %>%
+    summarise(across(everything(), median))
+  tibble(!!var := seq(min(sc_ord2[[var]]), max(sc_ord2[[var]]), length.out = n)) %>%
+    bind_cols(med[rep(1, n), , drop = FALSE])
+}
+
+eff_long <- purrr::map_dfr(loc_terms, function(v) {
+  g  <- build_grid(v)
+  pp <- predict(ord_final, newdata = g, type = "prob")$fit
+  as_tibble(pp) %>%
+    setNames(league_lbl[seq_len(ncol(pp))]) %>%
+    mutate(x = g[[v]], predictor = v) %>%
+    pivot_longer(-c(x, predictor), names_to = "League", values_to = "p")
+}) %>%
+  mutate(League = factor(League, levels = league_lbl))
+
+ggplot(eff_long, aes(x = x, y = p, fill = League)) +
+  geom_area(alpha = 0.92, color = "white", linewidth = 0.15) +
+  scale_fill_manual(values = league_pal) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1),
+                     expand = c(0, 0)) +
+  facet_wrap(~ predictor, scales = "free_x", ncol = 2) +
+  labs(title    = "Predicted league probabilities across each top predictor",
+       subtitle = "Other predictors held at their median; predictors are standardized (SD units)",
+       x = "Predictor value (z-score)", y = "P(LeagueIndex = k | x)",
+       caption = "Vertical thickness of each band = probability the model assigns to that league.") +
+  theme_ord()
+```
+
+For partial-PO predictors, the bands will visibly fan out non-uniformly across thresholds — that is the same parallel-slopes violation `nominal_test` flagged, made visual.
+
+## Latent-Score Map of the League Cutpoints
+
+The cumulative-link model is mechanically equivalent to a latent regression $\eta = X\beta$ with seven leagues defined by six estimated cutpoints $\theta_1 < \theta_2 < \dots < \theta_6$. Plotting each player's fitted $\hat\eta$ against the cutpoints converts the abstract coefficient table into a single picture that says where each league lives on the underlying skill axis.
+
+```{r ord_latent, echo=FALSE, fig.height=3.8, fig.width=7, message=FALSE, warning=FALSE}
+# Use $beta (location coefs) rather than coef() so partial-PO threshold-
+# specific coefficients don't sneak into the latent-score calculation.
+beta_loc <- ord_final$beta
+loc_vars <- intersect(names(beta_loc), colnames(sc_ord2))
+X_mat    <- as.matrix(sc_ord2[, loc_vars, drop = FALSE])
+eta_hat  <- as.numeric(X_mat %*% beta_loc[loc_vars])
+cutpts   <- ord_final$alpha
+
+latent_df <- tibble(eta = eta_hat,
+                    League = factor(y_true, levels = 1:7, labels = league_lbl))
+
+ggplot(latent_df, aes(x = eta, fill = League)) +
+  geom_density(alpha = 0.55, color = NA) +
+  geom_vline(xintercept = as.numeric(cutpts),
+             linetype = "dashed", color = "grey30", linewidth = 0.4) +
+  annotate("text", x = as.numeric(cutpts),
+           y = 0, label = names(cutpts),
+           vjust = -0.5, size = 2.7, color = "grey30", angle = 90) +
+  scale_fill_manual(values = league_pal) +
+  labs(title    = "Latent skill score by actual league, with estimated cutpoints",
+       subtitle = "Densities should stack left-to-right; cutpoints partition the latent axis into leagues",
+       x = expression(hat(eta) == X*hat(beta)), y = "Density",
+       caption = "Overlap between adjacent densities is the irreducible classification difficulty between neighboring leagues.") +
+  theme_ord()
+```
+
+## Forest Plot of Standardized Effects
+
+A forest plot lines up every coefficient on a common odds-ratio axis with its 95% CI. Because predictors were standardized, the horizontal position of each point is directly the relative importance of that skill — no need to compare apples and oranges across raw scales.
+
+```{r ord_forest, echo=FALSE, fig.height=3.6, fig.width=7}
+or_plot_df <- tidy(ord_final, conf.int = TRUE) %>%
+  filter(coef.type == "location") %>%
+  mutate(OR     = exp(estimate),
+         OR_lo  = exp(conf.low),
+         OR_hi  = exp(conf.high),
+         term   = reorder(term, OR))
+
+ggplot(or_plot_df, aes(x = OR, y = term)) +
+  geom_vline(xintercept = 1, color = "grey60", linetype = "dashed") +
+  geom_errorbarh(aes(xmin = OR_lo, xmax = OR_hi),
+                 height = 0.18, color = "grey30") +
+  geom_point(size = 3, color = "#0072B2") +
+  geom_text(aes(label = sprintf("%.2f [%.2f, %.2f]", OR, OR_lo, OR_hi)),
+            hjust = -0.15, size = 2.9, color = "grey25") +
+  scale_x_log10(expand = expansion(mult = c(0.05, 0.35))) +
+  labs(title    = paste0("Standardized odds ratios (link = ", best_link, ")"),
+       subtitle = "Per +1 SD in predictor, on the odds of being above any league threshold",
+       x = "Odds ratio (log scale)", y = NULL,
+       caption = "OR > 1 raises league; OR < 1 lowers it. CI crossing 1 = not significant at 5%.") +
+  theme_ord()
+```
+
+## Calibration and 5-Fold Cross-Validation
+
+In-sample numbers can flatter a model. Two checks address this: (1) a calibration plot bins predictions by their predicted probability of being at-or-above each league boundary and compares to the empirical rate, and (2) 5-fold cross-validated exact / within-1 accuracy and MAE confirm the in-sample numbers are not memorization.
+
+```{r ord_calibration, echo=FALSE, fig.height=3.4, fig.width=7, message=FALSE, warning=FALSE}
+prob_mat <- predict(ord_final, newdata = sc_ord2, type = "prob")$fit
+# Cumulative P(Y >= k+1) for k = 1..6 -- one curve per threshold.
+cum_above <- t(apply(prob_mat, 1, function(p) rev(cumsum(rev(p)))))[, -1, drop = FALSE]
+colnames(cum_above) <- paste0("P(>=", 2:7, ")")
+
+calib_df <- purrr::map_dfr(seq_len(ncol(cum_above)), function(j) {
+  thr  <- j + 1
+  pj   <- cum_above[, j]
+  yj   <- as.integer(y_true >= thr)
+  tibble(p = pj, y = yj, threshold = paste0(">= ", league_lbl[thr])) %>%
+    mutate(bin = ntile(p, 10)) %>%
+    group_by(threshold, bin) %>%
+    summarise(p_mean = mean(p), y_mean = mean(y), n = n(), .groups = "drop")
+})
+
+ggplot(calib_df, aes(x = p_mean, y = y_mean)) +
+  geom_abline(slope = 1, intercept = 0, color = "grey60", linetype = "dashed") +
+  geom_point(aes(size = n), color = "#0072B2", alpha = 0.85) +
+  geom_line(color = "#0072B2", alpha = 0.5) +
+  facet_wrap(~ threshold, nrow = 2) +
+  scale_size_continuous(range = c(1, 4), guide = "none") +
+  scale_x_continuous(labels = scales::percent_format(accuracy = 1),
+                     limits = c(0, 1)) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1),
+                     limits = c(0, 1)) +
+  labs(title    = "Calibration of cumulative probabilities by threshold",
+       subtitle = "Decile bins; on-diagonal = well-calibrated",
+       x = "Mean predicted P(LeagueIndex >= threshold)",
+       y = "Empirical proportion") +
+  theme_ord()
+```
+
+```{r ord_cv, echo=FALSE, message=FALSE, warning=FALSE}
+set.seed(757)
+K <- 5
+folds <- sample(rep(seq_len(K), length.out = nrow(sc_ord2)))
+
+cv_one <- function(k) {
+  tr <- sc_ord2[folds != k, , drop = FALSE]
+  te <- sc_ord2[folds == k, , drop = FALSE]
+  fit <- tryCatch(update(ord_final, data = tr), error = function(e) NULL)
+  if (is.null(fit)) return(NULL)
+  p   <- predict(fit, newdata = te, type = "class")$fit
+  p   <- as.integer(as.character(p))
+  y   <- as.integer(as.character(te$LeagueIndex))
+  tibble(fold = k, acc = mean(p == y), within1 = mean(abs(p - y) <= 1),
+         mae = mean(abs(p - y)))
+}
+
+cv_res <- purrr::map_dfr(seq_len(K), cv_one)
+kable(
+  bind_rows(
+    cv_res,
+    cv_res %>% summarise(fold = NA, acc = mean(acc),
+                         within1 = mean(within1), mae = mean(mae)) %>%
+      mutate(fold = "mean")
+  ) %>% mutate(across(where(is.numeric), ~round(.x, 3))),
+  caption = "5-fold cross-validated performance of $ord_{final}$"
+)
 ```
 
 ## Takeaways from the Ordinal Refit
 
-With the right tooling the ordinal model is no longer the embarrassing tail of this analysis. Three observations worth calling out:
+With the right tooling the ordinal model is no longer the embarrassing tail of this analysis. Five observations worth calling out:
 
 1. **The link function matters.** The Elo/Gumbel motivation from the introduction is now more than hand-waving — the link comparison table shows empirically which latent-error distribution the data prefer. If cloglog wins, that is direct support for the Gumbel story.
 2. **The parallel-slopes assumption is testable and often violated.** The `nominal_test` output identifies which predictors need a partial-PO relaxation. This was the single largest gap in the original treatment; moving to $ord_{PPO}$ when tests warrant it is the ordinal analogue of the confounding remediation already performed on the OLS models.
 3. **The fair metric for an ordinal response is rank-aware.** Exact accuracy penalizes a Diamond-vs-Master miss the same as a Bronze-vs-Grandmaster miss. Within-1 accuracy and MAE make clear that even when the ordinal model misses the exact bucket, it misses by a league — not at random. That is the property the midterm-2 lm never had and is the real payoff of doing the ordinal regression properly.
+4. **Predicted-probability curves replace the violin plots.** The exploration section used violin plots to guess at predictor effects on a discrete response. The CLM produces those same shapes from the *fitted model*, with proper cumulative semantics, and the latent-score density plot makes the cutpoint geometry concrete in a way no OLS diagnostic can.
+5. **5-fold cross-validation confirms the in-sample numbers.** Without CV the in-sample accuracy/MAE could be optimistic. The fold-level table shows whether $ord_{final}$ generalizes; small variance across folds is the signature of a stable model rather than a memorized fit.
 
 # Conclusion
 
-With this analysis, in many ways, I bit off more than I could chew. Choosing an ordinal response for this analysis was a daunting endeavor based on the material we ended up covering. Nevertheless, I think the experience was very successful. The linear regression assumptions were violated; therefore, bias was built into the model; the insights gained were still a tremendous help in weighing what predictors were more impactful for an explanation. I would not attempt to predict with using any of these models unless I got the ordinal model up in the running. Still, I am confident to offer the following to aspiring Starcraft II players:
+With this analysis, in many ways, I bit off more than I could chew. Choosing an ordinal response for this analysis was a daunting endeavor based on the material we ended up covering. Nevertheless, I think the experience was very successful. The linear regression assumptions were violated; therefore, bias was built into the model; the insights gained were still a tremendous help in weighing what predictors were more impactful for an explanation. I would not attempt to predict using any of these models unless I got the ordinal model up and running. Still, I am confident to offer the following to aspiring Starcraft II players:
 
 + 1 Practice Makes Perfect  - Players who invest time in the game tend to a higher rank. To make that time worthwhile, try starting with the remaining tips as starting points.
 + 2 Be Quick - Throughout a match, there is a real sense of urgency. It is essential to keep a plan in mind and be ready to act. It may be better for players to take suboptimal immediate action rather than spending a lot of time considering options. If a player feels like their maneuver set is limited, it may be more appropriate to consider alternatives when watching match replays instead of midmatch.

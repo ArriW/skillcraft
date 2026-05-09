@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Generate the full SkillCraft regression notebook, execute it, and export HTML."""
+import base64, pathlib
 import nbformat as nbf
 
 nb = nbf.v4.new_notebook()
@@ -13,6 +14,11 @@ def md(src):
 
 def code(src, **kw):
     nb.cells.append(nbf.v4.new_code_cell(src))
+
+def img_b64(rel_path, alt=""):
+    p = pathlib.Path(__file__).parent / rel_path
+    data = base64.b64encode(p.read_bytes()).decode()
+    return f'<img src="data:image/png;base64,{data}" alt="{alt}" style="max-width:100%">'
 
 
 # ──────────────────────────────────────────────────────────────
@@ -92,7 +98,7 @@ md("""\
 
 Videogames are one of my favorite pastimes. As a player who participates in ranked play, I've always kept my eye on the forefront of global competitions. One of the most notable games to establish an international competitive scene backed by paid professionals was the real-time strategy game (RTS) StarCraft II (SC2). In 2013 the top 10 StarCraft players made nearly four million dollars from their combined winnings. Watching top-caliber players' reflexes and control is astonishing to even seasoned videogame enthusiasts. At the 2019 StarCraft II World Championship Finale, many others and I packed into the arena to see what these professionals could do firsthand.
 
-![WCS](./inline/WCS.png)
+""" + img_b64("inline/WCS.png", "WCS Finals") + """
 
 The eye-watering speeds they perform at is universally referenced in gaming terminology as actions per minute (APMs). Professionals take actions at such fast speeds (high APMs); it becomes challenging to follow their overall strategy. Past pondering their sheer speed, I found it difficult to distinctly define what made these players highly skilled.
 
@@ -129,7 +135,7 @@ The dataset is a sample of averaged in-game metrics of StarCraft II players who 
 
 **LeagueIndex** — The levels range 1–8 corresponding to player ranks Bronze, Silver, Gold, Platinum, Diamond, Master, Grandmaster, and Professional. The rating system is similar to an Elo system, whose errors follow an extreme-value (Gumbel) distribution. Unfortunately, finer subdivisions are unavailable, so we are limited to predicting this ordinal response.
 
-![Leagues](./inline/StarCraft-II-Leagues.png)
+""" + img_b64("inline/StarCraft-II-Leagues.png", "StarCraft II League Icons") + """
 
 **Actions Per Minute (APMs)** — the standard metric for analyzing proficiency of players at RTS games; it is theorized that skills like this provide a great advantage.
 
@@ -252,17 +258,21 @@ code("""\
 preds = [c for c in sc.columns if c != "LeagueIndex"]
 ncols = 2
 nrows = int(np.ceil(len(preds) / ncols))
-fig, axes = plt.subplots(nrows, ncols, figsize=(10, nrows * 2.4))
+fig, axes = plt.subplots(nrows, ncols, figsize=(10, nrows * 3.0))
 axes = axes.flatten()
 
 for i, pred in enumerate(preds):
+    groups = [sc.loc[sc.LeagueIndex == lv, pred].dropna().values for lv in range(1, 8)]
     parts = axes[i].violinplot(
-        [sc.loc[sc.LeagueIndex == lv, pred].values for lv in range(1, 8)],
-        positions=range(1, 8), showmeans=True, showextrema=False)
+        groups, positions=range(1, 8), showmeans=True, showextrema=False)
     for j, pc in enumerate(parts["bodies"]):
         pc.set_facecolor(LEAGUE_PAL[j])
         pc.set_alpha(0.7)
     parts["cmeans"].set_color("black")
+    all_vals = np.concatenate(groups)
+    lo, hi = np.percentile(all_vals, [1, 99])
+    margin = (hi - lo) * 0.15
+    axes[i].set_ylim(lo - margin, hi + margin)
     axes[i].set_title(pred, fontweight="bold", fontsize=9)
     axes[i].set_xlabel("LeagueIndex")
 
@@ -354,10 +364,17 @@ code("""\
 keep = [c for c in lm_final.model.exog_names if c != "const"]
 corr_omega = sc[keep].corr()
 
-fig, ax = plt.subplots(figsize=(5, 4))
+n_vars = len(corr_omega)
+cell_size = 0.85
+fig_w = max(6, n_vars * cell_size + 1.5)
+fig_h = max(5, n_vars * cell_size + 1.0)
+fig, ax = plt.subplots(figsize=(fig_w, fig_h))
 sns.heatmap(corr_omega, annot=True, fmt=".2f", cmap="RdBu_r",
-            center=0, vmin=-1, vmax=1, linewidths=0.4, ax=ax, square=True)
+            center=0, vmin=-1, vmax=1, linewidths=0.4, ax=ax, square=True,
+            annot_kws={"size": 8})
 ax.set_title("Correlation Among lm_ω Predictors", fontweight="bold")
+ax.tick_params(axis="x", labelrotation=40)
+ax.tick_params(axis="y", labelrotation=0)
 plt.tight_layout()
 plt.show()
 """)

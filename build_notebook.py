@@ -55,6 +55,141 @@ If you want the headline takeaway for aspiring players: **APM is a follower, not
 """)
 
 # ──────────────────────────────────────────────────────────────
+# STYLING — injected as HTML so the rendered report looks polished
+# ──────────────────────────────────────────────────────────────
+md("""\
+<style>
+/* ── Typography ───────────────────────────────────────────── */
+.rendered_html, .jp-RenderedHTMLCommon {
+    font-family: 'Georgia', 'Cambria', 'Times New Roman', serif;
+    font-size: 16px;
+    line-height: 1.72;
+    color: #222;
+}
+.rendered_html h1, .jp-RenderedHTMLCommon h1 {
+    font-family: 'Helvetica Neue', 'Arial', sans-serif;
+    font-weight: 700;
+    font-size: 2em;
+    letter-spacing: -0.02em;
+    border-bottom: 2px solid #0072B2;
+    padding-bottom: 0.25em;
+    margin-top: 2.2em;
+}
+.rendered_html h2, .jp-RenderedHTMLCommon h2 {
+    font-family: 'Helvetica Neue', 'Arial', sans-serif;
+    font-weight: 600;
+    font-size: 1.45em;
+    color: #333;
+    margin-top: 1.8em;
+}
+.rendered_html h3, .jp-RenderedHTMLCommon h3 {
+    font-family: 'Helvetica Neue', 'Arial', sans-serif;
+    font-weight: 600;
+    font-size: 1.15em;
+    color: #444;
+}
+
+/* ── Hide code by default ─────────────────────────────────── */
+.jp-Cell-inputWrapper, .input {
+    display: none;
+}
+.jp-Cell-inputWrapper.code-shown, .input.code-shown {
+    display: block;
+}
+
+/* ── Tables ───────────────────────────────────────────────── */
+.rendered_html table, .jp-RenderedHTMLCommon table {
+    border-collapse: collapse;
+    margin: 1.2em auto;
+    font-size: 14px;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+.rendered_html th, .jp-RenderedHTMLCommon th {
+    background: #f7f7f7;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-bottom: 2px solid #ccc;
+    text-align: left;
+}
+.rendered_html td, .jp-RenderedHTMLCommon td {
+    padding: 6px 14px;
+    border-bottom: 1px solid #e8e8e8;
+}
+.rendered_html tr:hover td, .jp-RenderedHTMLCommon tr:hover td {
+    background: #f9f9f9;
+}
+
+/* ── Figures ──────────────────────────────────────────────── */
+.jp-OutputArea-output img, .output_png img {
+    display: block;
+    margin: 0.8em auto;
+    max-width: 100%;
+    border-radius: 4px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+}
+
+/* ── Text output ──────────────────────────────────────────── */
+.jp-OutputArea-output pre, .output_text pre {
+    font-size: 12.5px;
+    line-height: 1.55;
+    background: #fafafa;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    padding: 10px 14px;
+    color: #333;
+}
+
+/* ── Page layout ──────────────────────────────────────────── */
+.jp-Notebook, #notebook-container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 20px 40px;
+}
+
+/* ── Toggle button ────────────────────────────────────────── */
+#code-toggle-btn {
+    position: fixed;
+    top: 12px;
+    right: 16px;
+    z-index: 9999;
+    background: #0072B2;
+    color: white;
+    border: none;
+    padding: 7px 16px;
+    border-radius: 5px;
+    font-size: 13px;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    cursor: pointer;
+    opacity: 0.85;
+    transition: opacity 0.2s;
+}
+#code-toggle-btn:hover { opacity: 1; }
+</style>
+
+<script>
+// Code visibility toggle
+document.addEventListener('DOMContentLoaded', function() {
+    var btn = document.createElement('button');
+    btn.id = 'code-toggle-btn';
+    btn.textContent = 'Show Code';
+    btn.dataset.visible = 'false';
+    document.body.appendChild(btn);
+
+    btn.addEventListener('click', function() {
+        var cells = document.querySelectorAll('.jp-Cell-inputWrapper, .input');
+        var show = btn.dataset.visible === 'false';
+        cells.forEach(function(c) {
+            if (show) c.classList.add('code-shown');
+            else c.classList.remove('code-shown');
+        });
+        btn.dataset.visible = show ? 'true' : 'false';
+        btn.textContent = show ? 'Hide Code' : 'Show Code';
+    });
+});
+</script>
+""")
+
+# ──────────────────────────────────────────────────────────────
 # SETUP
 # ──────────────────────────────────────────────────────────────
 code("""\
@@ -84,10 +219,14 @@ LEAGUE_LBL = ["Bronze", "Silver", "Gold", "Platinum",
               "Diamond", "Master", "Grandmaster"]
 
 sns.set_theme(style="whitegrid", font_scale=0.95,
-              rc={"axes.facecolor": "white", "figure.facecolor": "white",
-                  "axes.edgecolor": ".3", "grid.color": ".92"})
-plt.rcParams.update({"figure.dpi": 120, "savefig.dpi": 120,
-                      "font.family": "sans-serif"})
+              rc={"axes.facecolor": "#fafafa", "figure.facecolor": "white",
+                  "axes.edgecolor": ".35", "grid.color": ".90",
+                  "grid.linewidth": 0.5})
+plt.rcParams.update({"figure.dpi": 140, "savefig.dpi": 140,
+                      "font.family": "sans-serif",
+                      "axes.titlesize": 11, "axes.titleweight": "bold",
+                      "axes.labelsize": 10, "xtick.labelsize": 9,
+                      "ytick.labelsize": 9, "figure.titlesize": 13})
 """)
 
 # ──────────────────────────────────────────────────────────────

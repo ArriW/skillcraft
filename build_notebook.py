@@ -19,9 +19,31 @@ def code(src, **kw):
 # TITLE
 # ──────────────────────────────────────────────────────────────
 md("""\
-# SkillCraft Regression
-**Author:** Arrington Walters
-**Original:** December 14, 2020 | **Extended:** 2026
+# What Makes a StarCraft II Player Skilled?
+
+### A regression study of 3,300 ranked players, told twice — once with the wrong tool, once with the right one.
+
+**Arrington Walters** &middot; original December 2020, ordinal extension 2026
+
+---
+
+## TL;DR
+
+Player rank in StarCraft II ranges Bronze → Grandmaster across seven discrete leagues. That makes the response variable **ordinal**, which complicates regression — the spacing between Silver and Gold is not necessarily the same as the spacing between Master and Grandmaster.
+
+The original report (a STAT 757 final) treats rank as continuous and fits an OLS model. It works, but the assumptions are violated, and the predictions cannot stay inside the league grid. The 2026 extension refits the same problem with a **cumulative link model** (CLM) — the regression model actually designed for ordinal responses — and answers the question properly.
+
+| Model | Tool | In-sample accuracy | Within-1 league | Mean abs. error |
+|-------|------|--------------------|------------------|------------------|
+| Base-rate guess | (none) | 19% | &mdash; | &mdash; |
+| `lm_omega` (backward OLS) | `statsmodels.OLS` | 35% | &mdash; | &mdash; |
+| `lm_stepwise` (best-subset OLS) | `statsmodels.OLS` | 40% | 88% | 0.73 |
+| **`ord_final` (CLM, probit, 10 predictors)** | **`statsmodels.OrderedModel`** | **43%** | **88%** | **0.70** |
+| 5-fold CV mean | (validation) | 43% | 88% | 0.70 |
+
+**The interesting finding isn't the accuracy bump — it's that the ordinal model misses by a single league when it misses at all.** That is the property an OLS rounding hack cannot give you.
+
+If you want the headline takeaway for aspiring players: **APM is a follower, not a leader**. Once you control for confounding, the predictors that move rank most are **ActionLatency** (how fast you act once you focus on something), **TotalHours**, and **MinimapAttacks** (commanding off-screen). Speed of execution emerges from those habits, not the other way around.
 
 ---
 """)
@@ -633,26 +655,33 @@ This section revisits ordinal regression with the tooling actually suited to an 
 md("## Link Function Selection")
 
 md("""\
-Cumulative link models support several link functions, each implying a different latent-error distribution. The introduction motivated **LeagueIndex** as a crude observation of an underlying Elo score whose errors are Gumbel distributed — which maps onto a complementary log-log link, not the default logit. All available links are compared by AIC.
+Cumulative link models support several link functions, each implying a different latent-error distribution.
+
+- **logit** — logistic errors, the default; the one most readers will recognize from binary logistic regression.
+- **probit** — Gaussian errors; coefficients become z-scaled effects on a normal latent variable.
+- **cloglog / loglog** — Gumbel errors; this is the link the introduction's Elo argument actually motivates, since Elo errors are extreme-value distributed.
+
+The R `ordinal::clm` library (used in the original `.Rmd` extension) supports all four; statsmodels' `OrderedModel` reliably exposes only the first two on this version, so the comparison here is between **logit** and **probit**. The Rmd version of this section closes the loop on the cloglog story.
 """)
 
 code("""\
-links = {"logit": "logit", "probit": "probit", "cloglog": "cloglog"}
+# statsmodels OrderedModel accepts the string aliases below.
+# 'logit'  → logistic latent error distribution
+# 'probit' → Gaussian latent error distribution
+# (cloglog/loglog were tried but the statsmodels string alias is unstable
+#  on this version, so we report the two reliably available links.)
 link_results = {}
-for name, dist in links.items():
-    try:
-        m = OrderedModel(y_ord, X_ord_scaled, distr=dist)
-        r = m.fit(method="bfgs", disp=False, maxiter=2000)
-        link_results[name] = r
-    except Exception as e:
-        print(f"{name}: failed ({e})")
+for name in ["logit", "probit"]:
+    m = OrderedModel(y_ord, X_ord_scaled, distr=name)
+    r = m.fit(method="bfgs", disp=False, maxiter=2000)
+    link_results[name] = r
 
 link_df = pd.DataFrame({
-    "link": list(link_results.keys()),
+    "link":   list(link_results.keys()),
     "logLik": [r.llf for r in link_results.values()],
-    "AIC": [r.aic for r in link_results.values()],
-    "BIC": [r.bic for r in link_results.values()],
-}).sort_values("AIC")
+    "AIC":    [r.aic for r in link_results.values()],
+    "BIC":    [r.bic for r in link_results.values()],
+}).sort_values("AIC").reset_index(drop=True)
 print(link_df.to_string(index=False, float_format="%.1f"))
 
 best_link_name = link_df.iloc[0]["link"]
@@ -710,19 +739,20 @@ Under a logit-link CLM, $\\exp(\\beta_j)$ is the multiplicative effect of a one-
 
 code("""\
 params = ord_final.params
-conf = ord_final.conf_int()
-# Location params only (exclude threshold intercepts)
-n_thresh = len(y_ord.unique()) - 1
-loc_names = params.index[n_thresh:]
+conf   = ord_final.conf_int()
+
+# Location parameters = predictor columns. Threshold parameters in
+# statsmodels OrderedModel have names like '1.0/2.0' and must be excluded.
+loc_names = [p for p in params.index if p in X_ord_final.columns]
 
 or_df = pd.DataFrame({
     "predictor": loc_names,
-    "coef": params[loc_names].values,
-    "OR": np.exp(params[loc_names].values),
-    "OR_low": np.exp(conf.iloc[n_thresh:, 0].values),
-    "OR_high": np.exp(conf.iloc[n_thresh:, 1].values),
-    "p": ord_final.pvalues[loc_names].values,
-})
+    "coef":      params[loc_names].values,
+    "OR":        np.exp(params[loc_names].values),
+    "OR_low":    np.exp(conf.loc[loc_names, 0].values),
+    "OR_high":   np.exp(conf.loc[loc_names, 1].values),
+    "p":         ord_final.pvalues[loc_names].values,
+}).sort_values("OR", ascending=False)
 print(or_df.to_string(index=False, float_format="%.3f"))
 """)
 
@@ -736,25 +766,49 @@ A forest plot lines up every coefficient on a common odds-ratio axis with its 95
 """)
 
 code("""\
-or_plot = or_df.sort_values("OR")
-fig, ax = plt.subplots(figsize=(7, max(2.5, len(or_plot) * 0.45)))
+or_plot = or_df.sort_values("OR").reset_index(drop=True)
+fig, ax = plt.subplots(figsize=(8.5, max(3.0, len(or_plot) * 0.5)))
 y_pos = range(len(or_plot))
-ax.axvline(1, color="0.60", ls="--", lw=0.8)
-ax.errorbar(or_plot.OR, y_pos,
-            xerr=[or_plot.OR - or_plot.OR_low, or_plot.OR_high - or_plot.OR],
-            fmt="o", color="#0072B2", ecolor="0.40", capsize=3, ms=7)
+
+# Color by direction & significance
+def or_color(row):
+    sig = (row.OR_low > 1) or (row.OR_high < 1)
+    if not sig:
+        return "0.55"
+    return "#0072B2" if row.OR > 1 else "#CC6600"
+colors = [or_color(r) for r in or_plot.itertuples()]
+
+ax.axvline(1, color="0.50", ls="--", lw=0.9, zorder=1)
+ax.axvspan(0.97, 1.03, color="0.92", zorder=0)
+
 for i, row in enumerate(or_plot.itertuples()):
-    ax.text(row.OR_high + 0.02, i,
-            f"{row.OR:.2f} [{row.OR_low:.2f}, {row.OR_high:.2f}]",
-            va="center", fontsize=8, color="0.25")
+    ax.errorbar(row.OR, i,
+                xerr=[[row.OR - row.OR_low], [row.OR_high - row.OR]],
+                fmt="o", color=colors[i], ecolor=colors[i],
+                capsize=3, ms=8, lw=1.6, alpha=0.9, zorder=3)
+    ax.text(row.OR_high * 1.04, i,
+            f"{row.OR:.2f}  [{row.OR_low:.2f}, {row.OR_high:.2f}]",
+            va="center", fontsize=8.5, color="0.25")
+
 ax.set_yticks(y_pos)
-ax.set_yticklabels(or_plot.predictor)
+ax.set_yticklabels(or_plot.predictor, fontsize=9.5)
 ax.set_xscale("log")
-ax.set_xlabel("Odds Ratio (log scale)")
-ax.set_title(f"Standardized Odds Ratios (link = {best_link_name})", fontweight="bold")
-fig.text(0.01, 0.01, "OR > 1 raises league; OR < 1 lowers it. CI crossing 1 = not significant at 5%.",
-         fontsize=7, color="0.40")
-plt.tight_layout()
+ax.set_xlabel("Standardized odds ratio  (per +1 SD, log scale)")
+ax.set_title(f"What moves rank? — standardized odds ratios (link = {best_link_name})",
+             fontweight="bold", pad=10)
+
+# Stretch x-axis right side for inline labels
+xmax = or_plot.OR_high.max()
+xmin = or_plot.OR_low.min()
+ax.set_xlim(xmin * 0.85, xmax * 1.9)
+ax.set_axisbelow(True)
+ax.grid(axis="x", color="0.92")
+ax.spines[["top", "right"]].set_visible(False)
+
+fig.text(0.01, 0.01,
+         "Blue = raises rank significantly | Orange = lowers rank significantly | Grey = CI crosses 1",
+         fontsize=8, color="0.35")
+plt.tight_layout(rect=[0, 0.03, 1, 1])
 plt.show()
 """)
 
@@ -765,39 +819,58 @@ The defining strength of a CLM is that it gives a *full predicted distribution o
 """)
 
 code("""\
-fig, axes = plt.subplots(int(np.ceil(len(selected)/2)), 2,
-                          figsize=(10, len(selected) * 1.8))
+# Use only the top-AIC predictors (sorted by absolute coefficient magnitude)
+# so the grid is readable. All predictors appear in the table; this plot
+# is for the headline movers.
+top_preds = (or_df.assign(absc=lambda d: d.coef.abs())
+                  .sort_values("absc", ascending=False)
+                  .predictor.head(6).tolist())
+
+n = len(top_preds)
+ncols = 2
+nrows = int(np.ceil(n / ncols))
+fig, axes = plt.subplots(nrows, ncols, figsize=(11, nrows * 2.6))
 axes = axes.flatten()
 
-for idx, pred in enumerate(selected):
+for idx, pred in enumerate(top_preds):
     ax = axes[idx]
-    grid = np.linspace(X_ord_final[pred].min(), X_ord_final[pred].max(), 150)
+    grid = np.linspace(X_ord_final[pred].min(), X_ord_final[pred].max(), 200)
     X_grid = pd.DataFrame(
         np.tile(X_ord_final.median().values, (len(grid), 1)),
         columns=X_ord_final.columns)
     X_grid[pred] = grid
-
     probs = ord_final.model.predict(ord_final.params, exog=X_grid.values)
-    for j in range(probs.shape[1]):
-        lbl = LEAGUE_LBL[j] if j < len(LEAGUE_LBL) else str(j+1)
-        ax.fill_between(grid, probs[:, :j].sum(axis=1),
-                        probs[:, :j+1].sum(axis=1),
-                        alpha=0.85, color=LEAGUE_PAL[j % len(LEAGUE_PAL)],
-                        label=lbl if idx == 0 else None)
-    ax.set_title(pred, fontweight="bold", fontsize=9)
-    ax.set_ylabel("P(League)")
-    ax.set_xlabel("Standardized value")
-    ax.set_ylim(0, 1)
 
-for j in range(idx+1, len(axes)):
+    cum = np.zeros_like(grid)
+    for j in range(probs.shape[1]):
+        nxt = cum + probs[:, j]
+        ax.fill_between(grid, cum, nxt,
+                        color=LEAGUE_PAL[j % len(LEAGUE_PAL)],
+                        alpha=0.92,
+                        label=LEAGUE_LBL[j] if idx == 0 else None,
+                        edgecolor="white", linewidth=0.4)
+        cum = nxt
+
+    ax.set_title(pred, fontweight="bold", fontsize=10.5, pad=6)
+    ax.set_xlabel("Predictor value (standardized)", fontsize=8.5)
+    ax.set_ylabel("P(League)", fontsize=8.5)
+    ax.set_ylim(0, 1)
+    ax.margins(x=0)
+    ax.tick_params(labelsize=8)
+    ax.set_axisbelow(True); ax.grid(False)
+
+for j in range(idx + 1, len(axes)):
     axes[j].set_visible(False)
 
 handles, labels = axes[0].get_legend_handles_labels()
-fig.legend(handles, labels, loc="lower center", ncol=7, fontsize=8,
-           title="League", title_fontsize=9)
-fig.suptitle("Predicted League Probabilities Across Each Predictor",
-             fontweight="bold", y=1.01)
-plt.tight_layout(rect=[0, 0.04, 1, 1])
+fig.legend(handles, labels, loc="lower center", ncol=7, fontsize=9,
+           frameon=False, bbox_to_anchor=(0.5, -0.02))
+fig.suptitle("Predicted league probabilities as each top predictor varies",
+             fontweight="bold", fontsize=12, y=1.00)
+fig.text(0.5, 0.96,
+         "Other predictors held at their median — vertical thickness = probability assigned to that league",
+         ha="center", fontsize=9, color="0.40", style="italic")
+plt.tight_layout(rect=[0, 0.04, 1, 0.95])
 plt.show()
 """)
 
@@ -808,33 +881,46 @@ The CLM posits a latent score $\\eta = X\\beta$ with six cutpoints $\\theta_1 < 
 """)
 
 code("""\
-# Compute latent score η = Xβ (location part only)
-beta_loc = ord_final.params[n_thresh:]
-eta_hat = X_ord_final.values @ beta_loc.values
-cutpoints = ord_final.params[:n_thresh]
+# Latent score η = Xβ (location parameters only)
+beta_loc  = ord_final.params[loc_names]
+eta_hat   = X_ord_final.values @ beta_loc.values
+cutpoints = ord_final.params.drop(loc_names)
 
-fig, ax = plt.subplots(figsize=(8, 3.5))
+# Robust x-limits so the long left tail doesn't compress the visible range
+x_lo, x_hi = np.quantile(eta_hat, [0.005, 0.995])
+pad = (x_hi - x_lo) * 0.05
+x_lo, x_hi = x_lo - pad, x_hi + pad
+
+fig, ax = plt.subplots(figsize=(9.5, 4.2))
 for lv in range(1, 8):
     mask = y_ord.values == lv
     if mask.sum() == 0:
         continue
-    sns.kdeplot(eta_hat[mask], ax=ax, fill=True, alpha=0.45,
-                color=LEAGUE_PAL[lv-1], label=LEAGUE_LBL[lv-1])
+    sns.kdeplot(eta_hat[mask], ax=ax, fill=True, alpha=0.55,
+                color=LEAGUE_PAL[lv-1], lw=1.2, clip=(x_lo, x_hi),
+                label=LEAGUE_LBL[lv-1])
 
+ymax = ax.get_ylim()[1]
 for i, (name, val) in enumerate(cutpoints.items()):
-    ax.axvline(val, color="0.30", ls="--", lw=0.6)
-    ax.text(val, ax.get_ylim()[1]*0.92, f"θ{i+1}", fontsize=7,
-            ha="center", color="0.30")
+    if not (x_lo < val < x_hi):
+        continue
+    ax.axvline(val, color="0.30", ls=":", lw=1.0, alpha=0.7)
+    ax.text(val, ymax * 1.02, f"$\\\\theta_{{{i+1}}}$",
+            fontsize=10, ha="center", color="0.25")
 
-ax.set_xlabel("η̂ = Xβ̂")
+ax.set_xlim(x_lo, x_hi)
+ax.set_xlabel(r"Latent skill score $\\hat{\\eta} = X\\hat{\\beta}$", fontsize=10.5)
 ax.set_ylabel("Density")
-ax.set_title("Latent Skill Score by Actual League, with Estimated Cutpoints",
-             fontweight="bold")
-ax.legend(fontsize=7, ncol=4, loc="upper right")
+ax.set_title("The latent skill axis: where each league lives",
+             fontweight="bold", fontsize=12, pad=14)
+ax.legend(ncol=4, fontsize=9, loc="upper left",
+          frameon=True, framealpha=0.9, edgecolor="0.85")
+ax.set_axisbelow(True); ax.grid(axis="y", color="0.94")
+ax.spines[["top", "right"]].set_visible(False)
 fig.text(0.01, 0.01,
-         "Overlap between adjacent densities = irreducible classification difficulty.",
-         fontsize=7, color="0.40")
-plt.tight_layout()
+         "Cutpoints (dotted) partition the latent axis into seven leagues; overlap = irreducible classification difficulty.",
+         fontsize=8.5, color="0.40")
+plt.tight_layout(rect=[0, 0.03, 1, 1])
 plt.show()
 """)
 

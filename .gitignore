@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+
+# R session
+.RData
+.Rhistory
+.Rproj.user/
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Editor
+*.swp
+.vscode/
+.idea/
